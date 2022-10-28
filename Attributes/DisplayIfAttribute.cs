@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Minerva.Module
 {
@@ -15,7 +12,7 @@ namespace Minerva.Module
     {
         public string name = "";
         public object[] expectValues;
-        public bool match; 
+        public bool match;
 
         /// <summary>
         /// if field match with any value

@@ -1,16 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public enum ReflectionItemType
+﻿namespace Minerva.Module.Editor
 {
-    NULL,
-    INSTANCE,
-    CLASS,
-    METHOD,
-    COLLECTION,
-    MethodAndCollection,
-    PRIMITIVEINSTANCE,
-    InstanceOrClass
+    public enum ReflectionItemType
+    {
+        NULL,
+        INSTANCE,
+        CLASS,
+        METHOD,
+        COLLECTION,
+        MethodAndCollection,
+        PRIMITIVEINSTANCE,
+        InstanceOrClass
 
+    }
 }

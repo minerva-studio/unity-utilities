@@ -1,5 +1,4 @@
-﻿using Minerva.Module;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace Minerva.Module.Editor

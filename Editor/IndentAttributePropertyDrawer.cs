@@ -1,5 +1,4 @@
-﻿using Minerva.Module;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace Minerva.Module.Editor
@@ -20,7 +19,7 @@ namespace Minerva.Module.Editor
             EditorGUI.indentLevel += Attribute.indent;
             EditorGUI.PropertyField(position, property, label, true);
         }
-    } 
+    }
 
 
 }

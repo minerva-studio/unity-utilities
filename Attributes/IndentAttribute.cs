@@ -14,5 +14,5 @@ namespace Minerva.Module
         {
             this.indent = indent;
         }
-    } 
+    }
 }

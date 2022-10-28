@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections;
-using UnityEngine;
 
 
-namespace Amlos.Core
-{ 
+namespace Minerva.Module
+{
     /// <summary>
     /// an advanced coroutine helper that convert normal function to a coroutine
     /// </summary>
@@ -18,8 +17,8 @@ namespace Amlos.Core
         public IEnumerator Execute()
         {
             return enumerator != null ? GetEnumerator()
-                : (paramFunc != null ? AsIEnumerator(paramFunc)
-                : Empty());
+                : paramFunc != null ? AsIEnumerator(paramFunc)
+                : Empty();
         }
 
         public IEnumerator Empty()
@@ -49,35 +48,35 @@ namespace Amlos.Core
 
         public CoroutineFunction(Action func)
         {
-            this.paramFunc = (vs) => func();
-            this.enumerator = null;
-            this.vs = null;
+            paramFunc = (vs) => func();
+            enumerator = null;
+            vs = null;
         }
 
         public CoroutineFunction(Action<object[]> paramFunc, params object[] vs)
         {
             this.paramFunc = paramFunc;
-            this.enumerator = null;
+            enumerator = null;
             this.vs = vs;
         }
 
         public CoroutineFunction(Func<IEnumerator> paramFunc)
         {
             this.paramFunc = null;
-            this.enumerator = (vs) => paramFunc();
-            this.vs = null;
+            enumerator = (vs) => paramFunc();
+            vs = null;
         }
 
         public CoroutineFunction(Func<object[], IEnumerator> enumerator, params object[] vs)
         {
-            this.paramFunc = null;
+            paramFunc = null;
             this.enumerator = enumerator;
             this.vs = vs;
         }
 
         public bool Equals(CoroutineFunction other)
         {
-            return (other.enumerator == enumerator) && (paramFunc == other.paramFunc) && Equals(vs, other.vs);
+            return other.enumerator == enumerator && paramFunc == other.paramFunc && Equals(vs, other.vs);
         }
 
         public override bool Equals(object obj)

@@ -1,7 +1,6 @@
 ﻿using System;
 using UnityEditor;
 using UnityEngine;
-using CubeInt = Minerva.Module.CubeInt;
 
 namespace Minerva.Module.Editor
 {
@@ -42,7 +41,7 @@ namespace Minerva.Module.Editor
             YminP.intValue = newV3.y;
             ZminP.intValue = newV3.z;
 
-             
+
             SerializedProperty XsizeP = property.FindPropertyRelative("m_Width");
             SerializedProperty YsizeP = property.FindPropertyRelative("m_Height");
             SerializedProperty ZsizeP = property.FindPropertyRelative("m_Depth");
