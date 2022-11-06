@@ -1,8 +1,11 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Amlos.AI
+namespace Minerva.Module
 {
+    /// <summary>
+    /// A uuid label used in AI
+    /// </summary>
     [Serializable]
     public struct UUID : IComparable, IComparable<UUID>, IEquatable<UUID>
     {
