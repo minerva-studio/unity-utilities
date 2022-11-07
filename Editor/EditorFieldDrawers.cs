@@ -32,6 +32,28 @@ namespace Minerva.Module.Editor
         /// </summary>
         /// <param name="labelName"></param>
         /// <param name="value"></param>
+        /// <param name="isReadOnly"></param>
+        /// <returns> new value if changed, old if no change </returns>
+        public static object DrawField(string labelName, object value, bool isReadOnly)
+        {
+            var GUIState = GUI.enabled;
+            if (isReadOnly)
+            {
+                GUI.enabled = false;
+            }
+            var ret = DrawField(labelName, value);
+            if (isReadOnly)
+            {
+                GUI.enabled = GUIState;
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// Draw given value
+        /// </summary>
+        /// <param name="labelName"></param>
+        /// <param name="value"></param>
         /// <returns> new value if changed, old if no change </returns>
         public static object DrawField(string labelName, object value)
         {

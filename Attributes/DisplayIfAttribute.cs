@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace Minerva.Module
@@ -58,6 +59,30 @@ namespace Minerva.Module
         public static bool EqualsAny(object value, object[] expects)
         {
             return expects.Any(expect => MatchWithExpect(value, expect));
+        }
+
+        /// <summary>
+        /// is condition specified in the attribute true?
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        public static bool IsTrue(object obj, FieldInfo field)
+        {
+            var type = obj.GetType();
+            if (IsDefined(field, typeof(DisplayIfAttribute)))
+            {
+                var attrs = (DisplayIfAttribute[])GetCustomAttributes(field, typeof(DisplayIfAttribute));
+                foreach (var attr in attrs)
+                {
+                    string dependent = attr.name;
+                    if (!attr.EqualsAny(type.GetField(dependent).GetValue(obj)))
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
     }
 }
