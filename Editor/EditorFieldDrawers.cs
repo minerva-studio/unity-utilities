@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Reflection;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
+using static UnityEditorInternal.ReorderableList;
 
 namespace Minerva.Module.Editor
 {
@@ -33,15 +36,16 @@ namespace Minerva.Module.Editor
         /// <param name="labelName"></param>
         /// <param name="value"></param>
         /// <param name="isReadOnly"></param>
+        /// <param name="drawWarning"> if the field type is not supported, draw not supported message in editor</param>
         /// <returns> new value if changed, old if no change </returns>
-        public static object DrawField(string labelName, object value, bool isReadOnly)
+        public static object DrawField(string labelName, object value, bool isReadOnly, bool drawWarning = true)
         {
             var GUIState = GUI.enabled;
             if (isReadOnly)
             {
                 GUI.enabled = false;
             }
-            var ret = DrawField(labelName, value);
+            var ret = DrawField(labelName, value, drawWarning);
             if (isReadOnly)
             {
                 GUI.enabled = GUIState;
@@ -55,7 +59,7 @@ namespace Minerva.Module.Editor
         /// <param name="labelName"></param>
         /// <param name="value"></param>
         /// <returns> new value if changed, old if no change </returns>
-        public static object DrawField(string labelName, object value)
+        public static object DrawField(string labelName, object value, bool drawWarning = true)
         {
             if (value is string s)
             {
@@ -114,7 +118,12 @@ namespace Minerva.Module.Editor
             {
                 return DrawRangeField(labelName, r);
             }
-            else EditorGUILayout.LabelField("Do not support drawing type " + value?.GetType().Name ?? "");
+            else if (value is IList list && value.GetType().IsGenericType)
+            {
+                var itemType = value.GetType().GenericTypeArguments[0];
+                DrawList(list, itemType, labelName);
+            }
+            else if (drawWarning) EditorGUILayout.LabelField("Do not support drawing type " + value?.GetType().Name ?? "");
             return value;
         }
 
@@ -131,6 +140,18 @@ namespace Minerva.Module.Editor
             EditorGUILayout.EndHorizontal();
             RangeInt ret = new RangeInt(min, max);
             return ret;
+        }
+
+        public static ReorderableList DrawList(IList list, Type type, string labelName, ElementCallbackDelegate elementDrawer = null)
+        {
+            ReorderableList r = new(list, type, true, true, true, true);
+            ElementCallbackDelegate drawer = elementDrawer ?? new ElementCallbackDelegate((rect, index, isActive, isFocused) => { DrawField(index.ToString(), list[index]); });
+            r.elementHeight = EditorGUIUtility.singleLineHeight;
+            r.drawElementCallback += drawer;
+            r.onAddCallback += (r) => r.list.Add(Activator.CreateInstance(type));
+            r.drawHeaderCallback += (rect) => GUI.Label(rect, labelName);
+            r.DoLayoutList();
+            return r;
         }
     }
 }
