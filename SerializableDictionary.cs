@@ -10,7 +10,7 @@ namespace Minerva.Module
     [Serializable]
     public class SerializableDictionary : Dictionary<string, string>, ISerializationCallbackReceiver
     {
-        public List<Argument> arguments;
+        public List<StringPair> arguments;
 
         public void OnAfterDeserialize()
         {
@@ -26,7 +26,7 @@ namespace Minerva.Module
             arguments.Clear();
             foreach (var item in this)
             {
-                arguments.Add(new Argument(item.Key, item.Value));
+                arguments.Add(new StringPair(item.Key, item.Value));
             }
             arguments.Sort();
         }

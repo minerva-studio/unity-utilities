@@ -5,11 +5,11 @@ using UnityEngine;
 namespace Minerva.Module
 {
     [Serializable]
-    public class Argument : IEquatable<Argument>, IComparable<Argument>
+    public class StringPair : IEquatable<StringPair>, IComparable<StringPair>
     {
         [SerializeField] private string key;
         [SerializeField] private string value;
-        public Argument(string key, string value)
+        public StringPair(string key, string value)
         {
             Key = key;
             Value = value;
@@ -19,17 +19,17 @@ namespace Minerva.Module
         public string Key { get => key; set => key = value; }
 
 
-        public bool Equals(Argument other)
+        public bool Equals(StringPair other)
         {
             return other.value == value && other.key == key;
         }
 
         public override bool Equals(object obj)
         {
-            return obj is Argument ? Equals((Argument)obj) : false;
+            return obj is StringPair ? Equals((StringPair)obj) : false;
         }
 
-        public int CompareTo(Argument other)
+        public int CompareTo(StringPair other)
         {
             return key.CompareTo(other.key);
         }
@@ -38,11 +38,21 @@ namespace Minerva.Module
         {
             return key.GetHashCode();
         }
+
+        public static implicit operator KeyValuePair<string, string>(StringPair arg)
+        {
+            return new KeyValuePair<string, string>(arg.key, arg.value);
+        }
+
+        public static implicit operator StringPair(KeyValuePair<string, string> arg)
+        {
+            return new StringPair(arg.Key, arg.Value);
+        }
     }
 
-    public static class ArgumentExtensions
+    public static class StringPairExtensions
     {
-        public static bool ContainsKey(this IEnumerable<Argument> nameables, string key)
+        public static bool ContainsKey(this IEnumerable<StringPair> nameables, string key)
         {
             foreach (var nameable in nameables)
             {
@@ -51,7 +61,7 @@ namespace Minerva.Module
             return false;
         }
 
-        public static string GetValue(this IEnumerable<Argument> nameables, string key)
+        public static string GetValue(this IEnumerable<StringPair> nameables, string key)
         {
             foreach (var nameable in nameables)
             {
@@ -60,7 +70,7 @@ namespace Minerva.Module
             return string.Empty;
         }
 
-        public static bool SetValue(this IEnumerable<Argument> nameables, string key, string value)
+        public static bool SetValue(this IEnumerable<StringPair> nameables, string key, string value)
         {
             foreach (var nameable in nameables)
             {
