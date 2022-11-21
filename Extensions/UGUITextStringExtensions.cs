@@ -9,11 +9,22 @@ namespace Minerva.Module
 #if UNITY_EDITOR
 
         [UnityEditor.MenuItem("CONTEXT/Text/Convert TMP UGUI")]
-        public static void ConvertToTMP(UnityEditor.MenuCommand menuCommand)
+        public static void ConvertToTMPUGUI(UnityEditor.MenuCommand menuCommand)
         {
             Text text = (menuCommand.context as Text);
             Object.Destroy(text);
             var tmp = text.gameObject.AddComponent<TextMeshProUGUI>();
+            tmp.text = text.text;
+            tmp.color = text.color;
+            tmp.fontSize = text.fontSize;
+        }
+
+        [UnityEditor.MenuItem("CONTEXT/Text/Convert TMP")]
+        public static void ConvertToTMP(UnityEditor.MenuCommand menuCommand)
+        {
+            Text text = (menuCommand.context as Text);
+            Object.Destroy(text);
+            var tmp = text.gameObject.AddComponent<TextMeshPro>();
             tmp.text = text.text;
             tmp.color = text.color;
             tmp.fontSize = text.fontSize;

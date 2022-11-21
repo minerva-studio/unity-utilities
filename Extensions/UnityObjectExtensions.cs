@@ -5,7 +5,7 @@ namespace Minerva.Module
     public static class UnityObjectExtensions
     {
         /// <summary>
-        /// checking unity object exist
+        /// checking unity object exist, if object does not exist, returns a real null so you can use ?
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="instance"></param>
@@ -16,6 +16,13 @@ namespace Minerva.Module
         }
 
         public static T GetOrAddComponent<T>(this Component component) where T : UnityEngine.Component
+        {
+            T t = component.GetComponent<T>();
+            if (t) { return t; }
+            return component.gameObject.AddComponent<T>();
+        }
+
+        public static T GetOrAddComponent<T>(this GameObject component) where T : UnityEngine.Component
         {
             T t = component.GetComponent<T>();
             if (t) { return t; }
