@@ -53,6 +53,12 @@ namespace Minerva.Module
             {
                 throw new ArgumentNullException("The list of weightables is null");
             }
+
+            if (weightables.Count == 0)
+            {
+                return default;
+            }
+
             int totalWeight = weightables.Sum(w => w.Weight);
             if (totalWeight == 0)
             {
@@ -130,6 +136,24 @@ namespace Minerva.Module
 
     public static class NonWeightables
     {
+        public static T RandomPop<T>(this IList<T> list)
+        {
+            if (list == null)
+            {
+                throw new ArgumentNullException();
+            }
+
+            int count = list.Count;
+            if (count == 0)
+            {
+                return default;
+            }
+
+            int index = UnityEngine.Random.Range(0, count);
+            var value = list[index];
+            list.RemoveAt(index);
+            return value;
+        }
         public static T RandomGet<T>(this IList<T> list)
         {
             if (list == null)
@@ -189,7 +213,7 @@ namespace Minerva.Module
                     else
                     {
                         T item = list[UnityEngine.Random.Range(0, list.Count)];
-                        if (allowRepeat || result.Contains(item)) result.Add(item);
+                        if (allowRepeat || !result.Contains(item)) result.Add(item);
                         else i--;
                     }
                 }
@@ -198,7 +222,7 @@ namespace Minerva.Module
             else
             {
                 List<T> result = new List<T>(list);
-                for (int i = 0; i < n; i++)
+                for (int i = n; i < list.Count; i++)
                 {
                     list.RemoveAt(UnityEngine.Random.Range(0, list.Count));
                 }
