@@ -1,14 +1,17 @@
 ﻿using System;
 using UnityEngine;
 
-public sealed class EnumStringDropdownAttribute : PropertyAttribute
+namespace Minerva.Module
 {
-    public Type Type = null;
-    public int SelectedID = -1;
-
-
-    public EnumStringDropdownAttribute(Type enumType)
+    public sealed class EnumStringDropdownAttribute : PropertyAttribute
     {
-        Type = enumType;
+        public Type Type = null;
+        public int SelectedID = -1;
+
+
+        public EnumStringDropdownAttribute(Type enumType)
+        {
+            Type = enumType;
+        }
     }
 }

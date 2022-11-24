@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace Minerva.Module
 {
+    /// <summary>
+    /// Interface for weightable items
+    /// </summary>
     public interface IWeightable
     {
         int Weight { get; }
@@ -16,6 +19,9 @@ namespace Minerva.Module
 
     }
 
+    /// <summary>
+    /// Interface for weightable items
+    /// </summary>
     public interface IWeightable<T> : IWeightable
     {
         new T Item { get; }
@@ -32,13 +38,35 @@ namespace Minerva.Module
         /// <typeparam name="T"></typeparam>
         /// <param name="weightables"></param>
         /// <returns></returns> 
-        public static T Weight<T>(this List<IWeightable<T>> weightables, int seed) => weightables.WeightNode(seed).Item;
-        public static T Weight<T>(this List<IWeightable<T>> weightables) => weightables.WeightNode().Item;
-        public static TItem Weight<T, TItem>(this List<T> weightables) where T : IWeightable<TItem> => weightables.WeightNode().Item;
+        public static T Weight<T>(this IList<IWeightable<T>> weightables, int seed) => weightables.WeightNode(seed).Item;
+        
+        /// <summary>
+        /// return a random item from the list, distributed by the weight given
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <returns></returns> 
+        public static T Weight<T>(this IList<IWeightable<T>> weightables) => weightables.WeightNode().Item;
+
+        /// <summary>
+        /// return a random item from the list, distributed by the weight given
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <returns></returns> 
+        public static TItem Weight<T, TItem>(this IList<T> weightables) where T : IWeightable<TItem> => weightables.WeightNode().Item;
 
 
 
-        public static T WeightNode<T>(this List<T> weightables, int seed) where T : IWeightable
+        /// <summary>
+        /// Get a weighted node
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <param name="seed"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static T WeightNode<T>(this IList<T> weightables, int seed) where T : IWeightable
         {
             var state = UnityEngine.Random.state;
             UnityEngine.Random.InitState(seed);
@@ -47,7 +75,14 @@ namespace Minerva.Module
             return result;
         }
 
-        public static T WeightNode<T>(this List<T> weightables) where T : IWeightable
+        /// <summary>
+        /// Get a weighted node
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static T WeightNode<T>(this IList<T> weightables) where T : IWeightable
         {
             if (weightables == null)
             {
@@ -84,20 +119,26 @@ namespace Minerva.Module
 
 
 
-
-        public static List<T> RandomReorder<T>(this List<IWeightable<T>> weightables) => (List<T>)(object)RandomReorder<IWeightable<T>, T>(weightables);
-        public static List<TItem> RandomReorder<T, TItem>(this List<T> weightables) where T : IWeightable<TItem>
+        /// <summary>
+        /// Random Reorder the list by weight
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        public static void RandomReorder<T>(this IList<T> weightables) where T : IWeightable
         {
-            var ret = new List<TItem>();
-            var all = new List<T>(weightables);
+            var randomResult = new List<T>();
             for (int i = weightables.Count() - 1; i >= 0; i--)
             {
-                var t = all.WeightNode();
-                ret.Add(t.Item);
-                all.Remove(t);
+                var t = weightables.WeightNode();
+                randomResult.Add(t);
+                weightables.Remove(t);
 
             }
-            return ret;
+            weightables.Clear();
+            foreach (var item in randomResult)
+            {
+                weightables.Add(item);
+            }
         }
 
         /// <summary>
@@ -106,7 +147,7 @@ namespace Minerva.Module
         /// <typeparam name="T"></typeparam>
         /// <param name="weightables"></param>
         /// <returns></returns>
-        public static List<T> AllResults<T>(this List<IWeightable<T>> weightables)
+        public static List<T> AllResults<T>(this IList<IWeightable<T>> weightables)
         {
             return weightables.Select(w => w.Item).ToList();
         }
@@ -117,7 +158,7 @@ namespace Minerva.Module
         /// <typeparam name="T"></typeparam>
         /// <param name="weightables"></param>
         /// <returns></returns>
-        public static int Sum<T>(this List<IWeightable<T>> weightables)
+        public static int Sum<T>(this IList<IWeightable<T>> weightables)
         {
             return weightables.Sum(w => w.Weight);
         }
@@ -128,140 +169,10 @@ namespace Minerva.Module
         /// <typeparam name="T"></typeparam>
         /// <param name="weightables"></param>
         /// <returns></returns>
-        public static int Sum<T>(this List<T> weightables) where T : IWeightable
+        public static int Sum<T>(this IList<T> weightables) where T : IWeightable
         {
             return weightables.Sum(w => w.Weight);
         }
     }
 
-    public static class NonWeightables
-    {
-        public static T RandomPop<T>(this IList<T> list)
-        {
-            if (list == null)
-            {
-                throw new ArgumentNullException();
-            }
-
-            int count = list.Count;
-            if (count == 0)
-            {
-                return default;
-            }
-
-            int index = UnityEngine.Random.Range(0, count);
-            var value = list[index];
-            list.RemoveAt(index);
-            return value;
-        }
-        public static T RandomGet<T>(this IList<T> list)
-        {
-            if (list == null)
-            {
-                throw new ArgumentNullException();
-            }
-
-            int count = list.Count;
-            if (count == 0)
-            {
-                return default;
-            }
-
-            int index = UnityEngine.Random.Range(0, count);
-            return list[index];
-        }
-
-        public static T RandomGet<T>(this IEnumerable<T> list)
-        {
-            int count = list.Count();
-            if (count == 0)
-            {
-                return default;
-            }
-
-            int index = UnityEngine.Random.Range(0, count);
-            foreach (var item in list)
-            {
-                if (index-- <= 0)
-                {
-                    return item;
-                }
-            }
-
-            return default;
-        }
-
-        public static List<T> RandomGet<T>(this IList<T> list, int n, bool allowRepeat = false)
-        {
-            if (n == 0)
-            {
-                return new List<T>();
-            }
-            if (n > list.Count)
-            {
-                throw new ArgumentOutOfRangeException();
-            }
-            if (n < list.Count / 2)
-            {
-                List<T> result = new List<T>();
-                for (int i = 0; i < n; i++)
-                {
-                    if (list.Count == 0)
-                    {
-                        return result;
-                    }
-                    else
-                    {
-                        T item = list[UnityEngine.Random.Range(0, list.Count)];
-                        if (allowRepeat || !result.Contains(item)) result.Add(item);
-                        else i--;
-                    }
-                }
-                return result;
-            }
-            else
-            {
-                List<T> result = new List<T>(list);
-                for (int i = n; i < list.Count; i++)
-                {
-                    list.RemoveAt(UnityEngine.Random.Range(0, list.Count));
-                }
-                return result;
-            }
-        }
-        public static List<T> RandomGet<T>(this IEnumerable<T> list, int n, bool allowRepeat = false)
-        {
-            var ts = list.ToList();
-            List<T> result = new List<T>();
-            for (int i = 0; i < n; i++)
-            {
-                if (ts.Count == 0)
-                {
-                    return result;
-                }
-                else
-                {
-                    T item = ts[UnityEngine.Random.Range(0, ts.Count)];
-                    result.Add(item);
-                    if (!allowRepeat) ts.Remove(item);
-                }
-            }
-            return result;
-        }
-
-        public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> shuffle)
-        {
-            List<T> list = new List<T>();
-            List<T> original = shuffle.ToList();
-
-            for (int i = original.Count() - 1; i >= 0; i--)
-            {
-                int index = UnityEngine.Random.Range(0, original.Count);
-                list.Add(original[index]);
-                original.RemoveAt(index);
-            }
-
-            return list;
-        }
-    }
 }
