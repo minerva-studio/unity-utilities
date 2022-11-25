@@ -31,10 +31,16 @@ namespace Minerva.Module
         }
 #endif
 
+        public static string UGUIMark(this string str, string colorCode)
+        {
+            return $"<mark={colorCode}>{str}</mark>";
+        }
+
         public static string UGUIUnderline(this string str)
         {
             return $"<u>{str}</u>";
         }
+
         public static string UGUIItalic(this string str)
         {
             return $"<i>{str}</i>";
