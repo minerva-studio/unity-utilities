@@ -4,18 +4,19 @@ using UnityEngine;
 namespace Minerva.Module
 {
     /// <summary>
-    /// a field, method, or anything that is temporary
+    /// Mark that the method is called in Animator, it is not useless
     /// <br></br>
     /// Not useful really
     /// </summary>
-    [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
-    public class TemporaryAttribute : PropertyAttribute
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    public class CallInAnimatorAttribute : PropertyAttribute
     {
-        public TemporaryAttribute()
+        public CallInAnimatorAttribute()
         {
             Debug.LogWarning($"Warning: this field is a temporary solution only, the perminant solution has not yet be implemented yet.");
         }
-        public TemporaryAttribute(string value)
+
+        public CallInAnimatorAttribute(string value)
         {
             Debug.LogWarning(value);
         }

@@ -157,6 +157,44 @@ namespace Minerva.Module
             return vector2Int + Vector2Int.down;
         }
 
+        public static Vector2 YVector(this Vector2 vector2)
+        {
+            return new Vector2(0, vector2.y);
+        }
+
+        public static Vector2Int YVector(this Vector2Int vector2Int)
+        {
+            return new Vector2Int(0, vector2Int.y);
+        }
+
+
+        public static Vector2 XVector(this Vector2 vector2)
+        {
+            return new Vector2(vector2.x, 0);
+        }
+        public static Vector2Int XVector(this Vector2Int vector2Int)
+        {
+            return new Vector2Int(vector2Int.x, 0);
+        }
+
+
+        public static Vector2Int ReflectY(this Vector2Int vector2Int)
+        {
+            return new Vector2Int(vector2Int.x, -vector2Int.y);
+        }
+        public static Vector2 ReflectY(this Vector2 vector2)
+        {
+            return new Vector2(vector2.x, -vector2.y);
+        }
+        public static Vector2Int ReflectX(this Vector2Int vector2Int)
+        {
+            return new Vector2Int(-vector2Int.x, vector2Int.y);
+        }
+        public static Vector2 ReflectX(this Vector2 vector2)
+        {
+            return new Vector2(-vector2.x, vector2.y);
+        }
+
 
         public static Vector2 Rotate(this Vector2 v, float rad)
         {
