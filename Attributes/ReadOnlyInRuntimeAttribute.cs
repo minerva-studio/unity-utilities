@@ -2,7 +2,7 @@
 
 namespace Minerva.Module
 {
-    public class ReadOnlyOnRuntimeAttribute : PropertyAttribute
+    public class ReadOnlyInRuntimeAttribute : PropertyAttribute
     {
 
     }

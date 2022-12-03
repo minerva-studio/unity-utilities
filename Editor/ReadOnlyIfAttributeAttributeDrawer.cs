@@ -5,59 +5,25 @@ using UnityEngine;
 namespace Minerva.Module.Editor
 {
     [CustomPropertyDrawer(typeof(ReadOnlyIfAttribute))]
-    public class ReadOnlyIfAttributeAttributeDrawer : PropertyDrawer
+    public class ReadOnlyIfAttributeAttributeDrawer : ConditionalFieldAttributeDrawer
     {
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        protected override void DrawField(Rect position, SerializedProperty property, GUIContent label, bool conditionMatches)
         {
-            ReadOnlyIfAttribute attr = (ReadOnlyIfAttribute)attribute;
-            //Debug.Log("Draw");
-            try
+            if (conditionMatches)
             {
-                object BaseMaster = property.serializedObject.targetObject;//store the base master
-                object value = ReflectionSystem.GetValue(BaseMaster, attr.listPath);//get the list from path
-
-                if (value is null || value.GetType() != attr.expectValue.GetType())
-                {
-                    if (attr.allowPathNotFoundEdit)
-                    {
-                        EditorGUI.PropertyField(position, property, label);
-                    }
-                    else
-                    {
-                        label.text += " (default mode)";
-                        label.tooltip += $"Cannot found the path {attr.listPath} or it is not a boolean";
-                        if (value is null) Debug.LogError("value found is " + value);
-                        EditorGUI.PropertyField(position, property, label);
-                    }
-                    return;
-                }
-                else if (MatchWithExpect(attr.expectValue, value))
-                {
-                    GUI.enabled = false;
-                    EditorGUI.PropertyField(position, property, label);
-                    GUI.enabled = true;
-                }
-                else
-                {
-                    EditorGUI.PropertyField(position, property, label);
-                }//Debug.Log(value);if (!(value is bool))
-
+                GUI.enabled = false;
+                EditorGUI.PropertyField(position, property, label);
+                GUI.enabled = true;
             }
-            catch (Exception e)
+            else
             {
-                Debug.LogException(e);
-                label.text += " (default mode)";
-                label.tooltip += $"Cannot found the path {attr.listPath} or it is not a boolean";
                 EditorGUI.PropertyField(position, property, label);
             }
         }
 
-        private static bool MatchWithExpect(object expect, object value)
+        protected override float GetFieldHeight(SerializedProperty property, GUIContent label, bool conditionMatches)
         {
-            if (expect is IComparable)
-                return value is IComparable b && b.CompareTo(expect) == 0;
-            return value.Equals(expect);
+            return base.GetBasePropertyHeight(property, label);
         }
-
     }
 }

@@ -3,8 +3,8 @@ using UnityEngine;
 
 namespace Minerva.Module.Editor
 {
-    [CustomPropertyDrawer(typeof(ReadOnlyOnRuntimeAttribute))]
-    public class ReadOnlyOnRuntimeAttributePropertyDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(ReadOnlyInRuntimeAttribute))]
+    public class ReadOnlyInRuntimeAttributePropertyDrawer : PropertyDrawer
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

@@ -2,31 +2,32 @@
 
 namespace Minerva.Module
 {
-    public class ReadOnlyIfAttribute : PropertyAttribute
+    public class ReadOnlyIfAttribute : ConditionalFieldAttribute
     {
-        public string listPath = "";
-        public object expectValue;
-        public bool allowPathNotFoundEdit;
-
-        public ReadOnlyIfAttribute(string listPath, object expectValue)
-        {//With property name to get name
-         //[Dropdown("SkillDatabase.Instance.SkillList", "skillID")]
-            this.listPath = listPath;
-            this.expectValue = expectValue;
-        }
-
-        public ReadOnlyIfAttribute(string listPath, object expectValue, bool allowPathNotFoundEdit)
-        {//With property name to get name
-         //[Dropdown("SkillDatabase.Instance.SkillList", "skillID")]
-            this.listPath = listPath;
-            this.expectValue = expectValue;
-            this.allowPathNotFoundEdit = allowPathNotFoundEdit;
-        }
-
-        public ReadOnlyIfAttribute(string listPath)
+        /// <summary>
+        /// if field match with any value
+        /// </summary>
+        /// <param name="listPath"></param>
+        /// <param name="expectValues"></param>
+        public ReadOnlyIfAttribute(string listPath, bool result, params object[] expectValues) : base(listPath, result, expectValues)
         {
-            this.listPath = listPath;
-            expectValue = true;
+        }
+
+        /// <summary>
+        /// if field match with any value
+        /// </summary>
+        /// <param name="listPath"></param>
+        /// <param name="expectValues"></param>
+        public ReadOnlyIfAttribute(string listPath, bool result) : base(listPath, true, result)
+        {
+        }
+
+        /// <summary>
+        /// if field is true
+        /// </summary>
+        /// <param name="listPath"></param>
+        public ReadOnlyIfAttribute(string listPath) : base(listPath)
+        {
         }
     }
 }

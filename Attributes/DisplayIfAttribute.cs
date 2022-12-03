@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -9,80 +10,40 @@ namespace Minerva.Module
     /// Allow Field not to display in the inspector is the given field in the instance match value
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
-    public class DisplayIfAttribute : PropertyAttribute
+    public class DisplayIfAttribute : ConditionalFieldAttribute
     {
-        public string name = "";
-        public object[] expectValues;
-        public bool match;
-
         /// <summary>
         /// if field match with any value
         /// </summary>
         /// <param name="listPath"></param>
         /// <param name="expectValues"></param>
-        public DisplayIfAttribute(string listPath = "", params object[] expectValues)
-        {//With property name to get name
-         //[Dropdown("SkillDatabase.Instance.SkillList", "skillID")]
-            name = listPath;
-            this.expectValues = expectValues;
+        public DisplayIfAttribute(string listPath = "", params object[] expectValues) : base(listPath, true, expectValues)
+        {
+        }
+        /// <summary>
+        /// if field match or not match with any value
+        /// </summary>
+        /// <param name="listPath"></param>
+        /// <param name="expectValues"></param>
+        public DisplayIfAttribute(string listPath, bool result, params object[] expectValues) : base(listPath, result, expectValues)
+        {
+        }
+
+        /// <summary>
+        /// if field match given truth value
+        /// </summary>
+        /// <param name="listPath"></param>
+        /// <param name="expectValues"></param>
+        public DisplayIfAttribute(string listPath, bool result) : base(listPath, true, result)
+        {
         }
 
         /// <summary>
         /// if field is true
         /// </summary>
         /// <param name="listPath"></param>
-        public DisplayIfAttribute(string listPath) : this(listPath, true)
+        public DisplayIfAttribute(string listPath) : base(listPath)
         {
-        }
-
-        public bool EqualsAny(object value)
-        {
-            return EqualsAny(value, expectValues);
-        }
-
-        private static bool MatchWithExpect(object value, object expect)
-        {
-            if (expect is Enum e1 && expect.GetType() == value.GetType() && GetCustomAttribute(expect.GetType(), typeof(FlagsAttribute)) != null)
-            {
-                //Debug.Log(value);
-                //Debug.Log(e1);
-                if (((Enum)value).HasFlag(e1))
-                {
-                    return true;
-                }
-            }
-            if (expect is IComparable) return value is IComparable b && b.CompareTo(expect) == 0;
-            return value.Equals(expect);
-        }
-
-
-        public static bool EqualsAny(object value, object[] expects)
-        {
-            return expects.Any(expect => MatchWithExpect(value, expect));
-        }
-
-        /// <summary>
-        /// is condition specified in the attribute true?
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <param name="field"></param>
-        /// <returns></returns>
-        public static bool IsTrue(object obj, FieldInfo field)
-        {
-            var type = obj.GetType();
-            if (IsDefined(field, typeof(DisplayIfAttribute)))
-            {
-                var attrs = (DisplayIfAttribute[])GetCustomAttributes(field, typeof(DisplayIfAttribute));
-                foreach (var attr in attrs)
-                {
-                    string dependent = attr.name;
-                    if (!attr.EqualsAny(type.GetField(dependent).GetValue(obj)))
-                    {
-                        return false;
-                    }
-                }
-            }
-            return true;
         }
     }
 }
