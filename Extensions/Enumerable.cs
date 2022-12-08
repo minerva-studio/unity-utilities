@@ -17,7 +17,7 @@ namespace Minerva.Module
         public static IEnumerable<T> ShallowClone<T>(this IEnumerable<T> ts)
         {
             if (ts is null) throw new ArgumentNullException();
-
+            if (ts.Count() == 0) return Array.Empty<T>();
             T[] clone = ts.ToArray();
             return clone;
         }

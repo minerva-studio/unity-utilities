@@ -6,7 +6,7 @@ namespace Minerva.Module
     /// <summary>
     /// Equality comparator for unity object
     /// </summary>
-    public class UnityObjectComparator : IEqualityComparer<UnityEngine.Object>
+    public class UnityObjectEqualityComparator : IEqualityComparer<UnityEngine.Object>
     {
         public bool Equals(UnityEngine.Object x, UnityEngine.Object y)
         {

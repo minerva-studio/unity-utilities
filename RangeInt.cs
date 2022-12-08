@@ -22,7 +22,7 @@ namespace Minerva.Module
         /// <summary>
         /// The length of the range.
         /// </summary>
-        public int range => max - min;
+        public int length => max - min;
 
         public int value { get => min == max ? min : UnityEngine.Random.Range(min, max); }
 
@@ -37,5 +37,15 @@ namespace Minerva.Module
             this.max = max;
         }
 
+
+        public static implicit operator UnityEngine.RangeInt(RangeInt ri)
+        {
+            return new UnityEngine.RangeInt(ri.min, ri.length);
+        }
+
+        public static implicit operator RangeInt(UnityEngine.RangeInt ri)
+        {
+            return new RangeInt(ri.start, ri.length);
+        }
     }
 }
