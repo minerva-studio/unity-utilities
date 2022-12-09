@@ -256,7 +256,7 @@ namespace Minerva.Module
             }
         }
 
-        public List<string> GetNextValidKeys()
+        public List<string> GetChildrenKeys()
         {
             return root.children.Keys.ToList();
         }
