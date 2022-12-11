@@ -127,6 +127,20 @@ namespace Minerva.Module.Editor
             return value;
         }
 
+        /// <summary>
+        /// Check a value is supported
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool IsSupported(object value)
+        {
+            if (value == null) return false;
+            if (value is string or int or float or double or bool or Vector2 or Vector2Int or Vector3 or Vector3Int or UUID or Enum or UnityEngine.Object or RangeInt)
+                return true;
+            else if (value is IList && value.GetType().IsGenericType)
+                return true;
+            return false;
+        }
 
 
         public static RangeInt DrawRangeField(string labelName, RangeInt value)

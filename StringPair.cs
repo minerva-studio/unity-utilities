@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace Minerva.Module
 {
+    /// <summary>
+    /// A string pair of a key and value
+    /// </summary>
     [Serializable]
     public class StringPair : IEquatable<StringPair>, IComparable<StringPair>
     {
