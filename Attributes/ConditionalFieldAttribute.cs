@@ -6,6 +6,9 @@ using UnityEngine;
 
 namespace Minerva.Module
 {
+    /// <summary>
+    /// Base class for all conditional field
+    /// </summary>
     public abstract class ConditionalFieldAttribute : PropertyAttribute
     {
         public string path = "";
@@ -58,7 +61,7 @@ namespace Minerva.Module
                 foreach (var attr in attrs)
                 {
                     string dependent = attr.path;
-                    if (!attr.EqualsAny(type.GetField(dependent).GetValue(obj)))
+                    if (attr.EqualsAny(type.GetField(dependent).GetValue(obj)) != attr.result)
                     {
                         return false;
                     }
