@@ -2,10 +2,11 @@
 
 namespace Minerva.Module
 {
+
     /// <summary>
     /// UI Helper class
     /// </summary>
-    public static class RectTransforms
+    public static class RectTransformExtension
     {
         /// <summary>
         /// Determine whether ui component is in screen

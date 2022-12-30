@@ -39,9 +39,13 @@ namespace Minerva.Module.Editor
             {
                 label.tooltip = ((TooltipAttribute)Attribute.GetCustomAttribute(field, typeof(TooltipAttribute))).tooltip;
             }
-            object value = DrawField(label, field.GetValue(target));
+
+            object oldValue = field.GetValue(target);
+            if (field.FieldType == typeof(string) && oldValue == null) oldValue = string.Empty;
+            object value = DrawField(label, oldValue);
             if (value is not null) field.SetValue(target, value);
         }
+
 
         /// <summary>
         /// Draw given value
@@ -49,16 +53,25 @@ namespace Minerva.Module.Editor
         /// <param name="labelName"></param>
         /// <param name="value"></param>
         /// <param name="isReadOnly"></param>
-        /// <param name="drawWarning"> if the field type is not supported, draw not supported message in editor</param>
+        /// <param name="displayUnsupportInfo"> if the field type is not supported, draw not supported message in editor</param>
         /// <returns> new value if changed, old if no change </returns>
-        public static object DrawField(string labelName, object value, bool isReadOnly, bool drawWarning = true)
+        public static object DrawField(string labelName, object value, bool isReadOnly, bool displayUnsupportInfo = true) => DrawField(new GUIContent(labelName), value, isReadOnly, displayUnsupportInfo);
+        /// <summary>
+        /// Draw given value
+        /// </summary>
+        /// <param name="labelName"></param>
+        /// <param name="value"></param>
+        /// <param name="isReadOnly"></param>
+        /// <param name="displayUnsupportInfo"> if the field type is not supported, draw not supported message in editor</param>
+        /// <returns> new value if changed, old if no change </returns>
+        public static object DrawField(GUIContent label, object value, bool isReadOnly, bool displayUnsupportInfo = true)
         {
             var GUIState = GUI.enabled;
             if (isReadOnly)
             {
                 GUI.enabled = false;
             }
-            var ret = DrawField(labelName, value, drawWarning);
+            var ret = DrawField(label, value, displayUnsupportInfo);
             if (isReadOnly)
             {
                 GUI.enabled = GUIState;
@@ -66,14 +79,22 @@ namespace Minerva.Module.Editor
             return ret;
         }
 
+
+
         /// <summary>
         /// Draw given value
         /// </summary>
         /// <param name="labelName"></param>
         /// <param name="value"></param>
         /// <returns> new value if changed, old if no change </returns>
-        public static object DrawField(string labelName, object value, bool drawWarning = true) => DrawField(new GUIContent(labelName), value, drawWarning);
-        public static object DrawField(GUIContent label, object value, bool drawWarning = true)
+        public static object DrawField(string labelName, object value, bool displayUnsupportInfo = true) => DrawField(new GUIContent(labelName), value, displayUnsupportInfo);
+        /// <summary>
+        /// Draw given value
+        /// </summary>
+        /// <param name="labelName"></param>
+        /// <param name="value"></param>
+        /// <returns> new value if changed, old if no change </returns>
+        public static object DrawField(GUIContent label, object value, bool displayUnsupportInfo = true)
         {
             if (value is string s)
             {
@@ -137,9 +158,15 @@ namespace Minerva.Module.Editor
                 var itemType = value.GetType().GenericTypeArguments[0];
                 DrawList(label, list, itemType);
             }
-            else if (drawWarning) EditorGUILayout.LabelField("Do not support drawing type " + value?.GetType().Name ?? "");
+            else if (value is null)
+            {
+                EditorGUILayout.LabelField(label.text, "null");
+            }
+            else if (displayUnsupportInfo) EditorGUILayout.LabelField(label.text, $"({value.GetType().Name})");
             return value;
         }
+
+
 
         /// <summary>
         /// Check a value is supported
