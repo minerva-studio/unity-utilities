@@ -295,7 +295,7 @@ namespace Minerva.Module
                 List<T> result = new List<T>(list);
                 for (int i = n; i < list.Count; i++)
                 {
-                    list.RemoveAt(UnityEngine.Random.Range(0, list.Count));
+                    result.RemoveAt(UnityEngine.Random.Range(0, result.Count));
                 }
                 return result;
             }
