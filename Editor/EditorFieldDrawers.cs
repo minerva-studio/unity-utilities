@@ -11,7 +11,7 @@ namespace Minerva.Module.Editor
     /// <summary>
     /// Helper class for drawing any type of field in editor
     /// </summary>
-    public static class EditorFieldDrawers
+    public static partial class EditorFieldDrawers
     {
         /// <summary>
         /// Draw field by <paramref name="field"/>, with label <paramref name="labelName"/>
@@ -209,6 +209,29 @@ namespace Minerva.Module.Editor
             r.drawHeaderCallback += (rect) => GUI.Label(rect, label);
             r.DoLayoutList();
             return r;
+        }
+
+
+
+
+
+        public static PageList DrawListPage(SerializedProperty serializedProperty)
+        {
+            return new PageList(serializedProperty);
+        }
+
+
+
+
+
+        public static GUIStyle SetRegionColor(Color color, out Color baseColor)
+        {
+            GUIStyle colorStyle = new();
+            colorStyle.normal.background = Texture2D.whiteTexture;
+
+            baseColor = GUI.backgroundColor;
+            GUI.backgroundColor = color;
+            return colorStyle;
         }
     }
 }

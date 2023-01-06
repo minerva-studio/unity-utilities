@@ -16,7 +16,7 @@ namespace Minerva.Module
         }
 
 
-        class Node
+        private class Node
         {
             public Dictionary<string, Node> children;
             public TValue value;
