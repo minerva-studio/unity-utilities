@@ -58,14 +58,14 @@ namespace Minerva.Module
     /// <br></br>
     /// Note: Prefab reference might point to a component, not the gameobject itself. This can cause some duplication on a list of prefabs
     /// </summary>
-    public class UnityAssetNameComparator : IEqualityComparer<Object>
+    public class UnityAssetNameComparator<T> : IEqualityComparer<T> where T : Object
     {
-        public bool Equals(Object x, Object y)
+        public bool Equals(T x, T y)
         {
             return x.name == y.name;
         }
 
-        public int GetHashCode(Object obj)
+        public int GetHashCode(T obj)
         {
             return obj.GetHashCode();
         }
