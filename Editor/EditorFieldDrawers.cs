@@ -137,6 +137,14 @@ namespace Minerva.Module.Editor
                 EditorGUILayout.LabelField(label, uUID.Value);
                 return uUID;
             }
+            else if (value is Color color)
+            {
+                return EditorGUILayout.ColorField(label, color);
+            }
+            else if (value is Gradient gradient)
+            {
+                return EditorGUILayout.GradientField(label, gradient);
+            }
             else if (value is Enum e)
             {
                 if (Attribute.GetCustomAttribute(value.GetType(), typeof(FlagsAttribute)) != null)

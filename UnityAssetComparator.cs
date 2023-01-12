@@ -27,6 +27,7 @@ namespace Minerva.Module
             return obj.GetHashCode();
         }
     }
+
     /// <summary>
     /// Equality comparator for Prefabs
     /// <br></br>
@@ -47,6 +48,24 @@ namespace Minerva.Module
         }
 
         public int GetHashCode(T obj)
+        {
+            return obj.GetHashCode();
+        }
+    }
+
+    /// <summary>
+    /// Equality comparator for Prefabs
+    /// <br></br>
+    /// Note: Prefab reference might point to a component, not the gameobject itself. This can cause some duplication on a list of prefabs
+    /// </summary>
+    public class UnityAssetNameComparator : IEqualityComparer<Object>
+    {
+        public bool Equals(Object x, Object y)
+        {
+            return x.name == y.name;
+        }
+
+        public int GetHashCode(Object obj)
         {
             return obj.GetHashCode();
         }

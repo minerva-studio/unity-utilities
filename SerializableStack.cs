@@ -14,6 +14,11 @@ namespace Minerva.Module
 
         public object SyncRoot => null;
 
+        public SerializableStack()
+        {
+            throw new NotImplementedException();
+        }
+
         public void CopyTo(Array array, int index)
         {
             throw new NotImplementedException();
