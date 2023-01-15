@@ -1,7 +1,9 @@
 ﻿using System;
+using UnityEngine;
 
 namespace Minerva.Module
 {
+
     /// <summary>
     /// Describes an integer range, see <see cref="UnityEngine.RangeInt"/>
     /// </summary>

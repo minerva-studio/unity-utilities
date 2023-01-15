@@ -25,7 +25,7 @@ namespace Minerva.Module.Editor
 
         protected float GetBasePropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return base.GetPropertyHeight(property, label);
+            return EditorGUI.GetPropertyHeight(property, label);
         }
 
         private object GetValue(SerializedProperty property, ConditionalFieldAttribute attr)
@@ -56,6 +56,10 @@ namespace Minerva.Module.Editor
                     return;
                 }
                 DrawField(position, property, label, attr.EqualsAny(value) == attr.result);
+            }
+            catch (ExitGUIException)
+            {
+                throw;
             }
             catch (Exception e)
             {

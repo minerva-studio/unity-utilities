@@ -11,7 +11,7 @@ namespace Minerva.Module.Editor
         {
             if (conditionMatches)
             {
-                return base.GetBasePropertyHeight(property, label);
+                return GetBasePropertyHeight(property, label);
             }
             else return 0;
         }

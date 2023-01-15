@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEditorInternal;
@@ -42,7 +43,7 @@ namespace Minerva.Module.Editor
 
             object oldValue = field.GetValue(target);
             if (field.FieldType == typeof(string) && oldValue == null) oldValue = string.Empty;
-            object value = DrawField(label, oldValue);
+            object value = DrawField(label, oldValue, field.FieldType);
             if (value is not null) field.SetValue(target, value);
         }
 
@@ -71,7 +72,7 @@ namespace Minerva.Module.Editor
             {
                 GUI.enabled = false;
             }
-            var ret = DrawField(label, value, displayUnsupportInfo);
+            var ret = DrawField(label, value, value?.GetType(), displayUnsupportInfo);
             if (isReadOnly)
             {
                 GUI.enabled = GUIState;
@@ -87,22 +88,23 @@ namespace Minerva.Module.Editor
         /// <param name="labelName"></param>
         /// <param name="value"></param>
         /// <returns> new value if changed, old if no change </returns>
-        public static object DrawField(string labelName, object value, bool displayUnsupportInfo = true) => DrawField(new GUIContent(labelName), value, displayUnsupportInfo);
+        public static object DrawField(string labelName, object value, Type type, bool displayUnsupportInfo = true) => DrawField(new GUIContent(labelName), value, type, displayUnsupportInfo);
         /// <summary>
         /// Draw given value
         /// </summary>
         /// <param name="labelName"></param>
         /// <param name="value"></param>
         /// <returns> new value if changed, old if no change </returns>
-        public static object DrawField(GUIContent label, object value, bool displayUnsupportInfo = true)
+        public static object DrawField(GUIContent label, object value, Type type, bool displayUnsupportInfo = true)
         {
-            if (value is string s)
-            {
-                return EditorGUILayout.TextField(label, s);
-            }
-            else if (value is int i)
+            //Debug.Log($"{value}, {type?.FullName}");
+            if (value is int i)
             {
                 return EditorGUILayout.IntField(label, i);
+            }
+            else if (value is long l)
+            {
+                return EditorGUILayout.LongField(label, l);
             }
             else if (value is float f)
             {
@@ -141,36 +143,56 @@ namespace Minerva.Module.Editor
             {
                 return EditorGUILayout.ColorField(label, color);
             }
-            else if (value is Gradient gradient)
+            else if (value is Rect rect)
             {
-                return EditorGUILayout.GradientField(label, gradient);
+                return EditorGUILayout.RectField(label, rect);
             }
-            else if (value is Enum e)
+            else if (value is RectInt rectInt)
             {
-                if (Attribute.GetCustomAttribute(value.GetType(), typeof(FlagsAttribute)) != null)
-                {
-                    return EditorGUILayout.EnumFlagsField(label, e);
-                }
-                else return EditorGUILayout.EnumPopup(label, e);
+                return EditorGUILayout.RectIntField(label, rectInt);
             }
-            else if (value is UnityEngine.Object uo)
+            else if (value is Bounds bounds)
             {
-                return EditorGUILayout.ObjectField(label, uo, value.GetType(), false);
+                return EditorGUILayout.BoundsField(label, bounds);
+            }
+            else if (value is BoundsInt boundsInt)
+            {
+                return EditorGUILayout.BoundsIntField(label, boundsInt);
             }
             else if (value is RangeInt r)
             {
                 return DrawRangeField(label, r);
             }
-            else if (value is IList list && value.GetType().IsGenericType)
-            {
-                var itemType = value.GetType().GenericTypeArguments[0];
-                DrawList(label, list, itemType);
-            }
-            else if (value is null)
+            else if (type is null)
             {
                 EditorGUILayout.LabelField(label.text, "null");
             }
-            else if (displayUnsupportInfo) EditorGUILayout.LabelField(label.text, $"({value.GetType().Name})");
+            else if (type == typeof(string))
+            {
+                return EditorGUILayout.TextField(label, value as string ?? string.Empty);
+            }
+            else if (type == typeof(Gradient))
+            {
+                return EditorGUILayout.GradientField(label, value as Gradient);
+            }
+            else if (value is Enum e)
+            {
+                if (Attribute.GetCustomAttribute(type, typeof(FlagsAttribute)) != null)
+                {
+                    return EditorGUILayout.EnumFlagsField(label, e);
+                }
+                else return EditorGUILayout.EnumPopup(label, e);
+            }
+            else if (type?.IsSubclassOf(typeof(UnityEngine.Object)) == true || type == typeof(UnityEngine.Object))
+            {
+                return EditorGUILayout.ObjectField(label, value as UnityEngine.Object, type, true);
+            }
+            else if (type == typeof(IList) || type?.GetInterfaces().Any(t => t == typeof(IList)) == true)
+            {
+                var itemType = type.GenericTypeArguments[0];
+                DrawList(label, value as IList, itemType);
+            }
+            else if (displayUnsupportInfo) EditorGUILayout.LabelField(label.text, $"({type?.Name ?? "[Unknown]"})");
             return value;
         }
 
@@ -210,7 +232,7 @@ namespace Minerva.Module.Editor
         public static ReorderableList DrawList(GUIContent label, IList list, Type type, ElementCallbackDelegate elementDrawer = null)
         {
             ReorderableList r = new(list, type, true, true, true, true);
-            ElementCallbackDelegate drawer = elementDrawer ?? new ElementCallbackDelegate((rect, index, isActive, isFocused) => { DrawField(index.ToString(), list[index]); });
+            ElementCallbackDelegate drawer = elementDrawer ?? new ElementCallbackDelegate((rect, index, isActive, isFocused) => { DrawField(index.ToString(), list[index], list[index]?.GetType()); });
             r.elementHeight = EditorGUIUtility.singleLineHeight;
             r.drawElementCallback += drawer;
             r.onAddCallback += (r) => r.list.Add(Activator.CreateInstance(type));

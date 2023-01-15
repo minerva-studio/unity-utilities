@@ -8,15 +8,18 @@ namespace Minerva.Module
     [Serializable]
     public struct Range
     {
-        //
-        // Summary:
-        //     The starting index of the range, where 0 is the first position, 1 is the second,
-        //     2 is the third, and so on.
+        public static RangeInt Zero => new RangeInt(0, 0);
+
+
+        /// <summary>
+        /// The starting index of the range, where 0 is the first position, 1 is the second,
+        /// 2 is the third, and so on.
+        /// </summary>
         public float min;
 
-        //
-        // Summary:
-        //     The end index of the range (not inclusive, unless min == max, range == 0).
+        /// <summary>
+        /// The end index of the range (not inclusive, unless min == max, range == 0).
+        /// </summary> 
         public float max;
 
         /// <summary>
