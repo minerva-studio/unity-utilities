@@ -300,6 +300,33 @@ namespace Minerva.Module
         }
 
 
+
+        public static IEnumerable<Vector3Int> Enumerate(Vector3Int min, Vector3Int max)
+        {
+            for (int x = min.x; x < max.x; x++)
+            {
+                for (int y = min.y; y < max.y; y++)
+                {
+                    for (int z = min.z; z < max.z; z++)
+                    {
+                        yield return new Vector3Int(x, y, z);
+                    }
+                }
+            }
+        }
+        public static IEnumerable<Vector2Int> Enumerate(Vector2Int min, Vector2Int max)
+        {
+            for (int x = min.x; x < max.x; x++)
+            {
+                for (int y = min.y; y < max.y; y++)
+                {
+                    yield return new Vector2Int(x, y);
+                }
+            }
+        }
+
+
+
         public static Vector3Int ToVector3Int(this Vector2Int vector2Int, int z = 0)
         {
             return new Vector3Int(vector2Int.x, vector2Int.y, z);
