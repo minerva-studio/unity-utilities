@@ -245,62 +245,31 @@ namespace Minerva.Module
             return new Vector2(v.x % a, v.y % a);
         }
 
-        public static IEnumerable<Vector2Int> Enumerate(this Vector2Int vector2Int)
+
+
+        public static IEnumerable<Vector2Int> Enumerate(this Vector2Int max)
         {
-            for (int x = 0; x < vector2Int.x; x++)
+            for (int x = 0; x < max.x; x++)
             {
-                for (int y = 0; y < vector2Int.y; y++)
+                for (int y = 0; y < max.y; y++)
                 {
                     yield return new Vector2Int(x, y);
                 }
             }
         }
-        public static IEnumerable<Vector2Int> Enumerate(this Vector2Int vector3Int, bool x, bool y)
+        public static IEnumerable<Vector3Int> Enumerate(this Vector3Int max)
         {
-            for (int ix = 0; ix < vector3Int.x; ix++)
+            for (int x = 0; x < max.x; x++)
             {
-                for (int iy = 0; iy < vector3Int.y; iy++)
+                for (int y = 0; y < max.y; y++)
                 {
-                    Vector2Int vector = new(vector3Int.x, vector3Int.y);
-                    if (x) vector.x = ix;
-                    if (y) vector.y = iy;
-                    yield return vector;
-                }
-            }
-        }
-        public static IEnumerable<Vector3Int> Enumerate(this Vector3Int vector3Int)
-        {
-            for (int x = 0; x < vector3Int.x; x++)
-            {
-                for (int y = 0; y < vector3Int.y; y++)
-                {
-                    for (int z = 0; z < vector3Int.z; z++)
+                    for (int z = 0; z < max.z; z++)
                     {
                         yield return new Vector3Int(x, y, z);
                     }
                 }
             }
         }
-        public static IEnumerable<Vector3Int> Enumerate(this Vector3Int vector3Int, bool x, bool y, bool z)
-        {
-            for (int ix = 0; ix < vector3Int.x; ix++)
-            {
-                for (int iy = 0; iy < vector3Int.y; iy++)
-                {
-                    for (int iz = 0; iz < vector3Int.z; iz++)
-                    {
-                        Vector3Int vector = new(vector3Int.x, vector3Int.y, vector3Int.z);
-                        if (x) vector.x = ix;
-                        if (y) vector.y = iy;
-                        if (z) vector.z = iz;
-                        yield return vector;
-                    }
-                }
-            }
-        }
-
-
-
         public static IEnumerable<Vector3Int> Enumerate(Vector3Int min, Vector3Int max)
         {
             for (int x = min.x; x < max.x; x++)
