@@ -9,10 +9,33 @@ namespace Minerva.Module
     /// An implementation of delegate with priority
     /// </summary>
     /// <typeparam name="T">delegate type of the event</typeparam>
-    public class PriorityEvent<T> where T : Delegate
+    public class PriorityEvent<T, TPriority> where T : Delegate
     {
-        List<(T, int)> events = new List<(T, int)>();
+        readonly List<(T, TPriority)> events;
+        readonly IComparer<TPriority>? _comparer;
         T? combinedEvent = default;
+
+
+        /// <summary>
+        ///     Gets the priority comparer used by the <see cref="PriorityEvent{TElement, TPriority}" />.
+        /// </summary>
+        public IComparer<TPriority> Comparer => _comparer ?? Comparer<TPriority>.Default;
+
+        public PriorityEvent()
+        {
+            events = new List<(T, TPriority)>();
+            _comparer = default;
+        }
+
+        public PriorityEvent(IComparer<TPriority> comparer)
+        {
+            events = new List<(T, TPriority)>();
+            _comparer = comparer;
+        }
+
+
+
+
 
         /// <summary>
         /// the event inside this priorty event
@@ -24,7 +47,7 @@ namespace Minerva.Module
         /// </summary>
         /// <param name="e"></param>
         /// <param name="priority"></param>
-        public void Add(T e, int priority)
+        public void Add(T e, TPriority priority)
         {
             events.Add((e, priority));
             Sort();
@@ -46,7 +69,7 @@ namespace Minerva.Module
         /// </summary>
         private void Sort()
         {
-            events.Sort((a, b) => a.Item2.CompareTo(b.Item2));
+            events.Sort((a, b) => Comparer.Compare(a.Item2, b.Item2));
         }
 
         /// <summary>
@@ -58,30 +81,28 @@ namespace Minerva.Module
             return Delegate.Combine(events.Select(e => e.Item1).ToArray()) as T;
         }
 
-        /// <summary>
-        /// invoke the event, use Event?.Invoke() instead
-        /// </summary>
-        /// <param name="args">the argument of the delegate</param>
-        /// <returns></returns>
-        [Obsolete]
-        public object? Invoke(params object[] args)
-        {
-            return Event?.DynamicInvoke(args);
-        }
 
-        public static PriorityEvent<T> operator +(PriorityEvent<T> priorityEvent, T @event)
+        public static PriorityEvent<T, TPriority> operator +(PriorityEvent<T, TPriority> priorityEvent, T @event)
         {
-            priorityEvent.Add(@event, 1);
+            TPriority? priority = default;
+            if (priority is not null)
+            {
+                priorityEvent.Add(@event, priority);
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
             return priorityEvent;
         }
 
-        public static PriorityEvent<T> operator +(PriorityEvent<T> priorityEvent, (T, int) @event)
+        public static PriorityEvent<T, TPriority> operator +(PriorityEvent<T, TPriority> priorityEvent, (T, TPriority) @event)
         {
             priorityEvent.Add(@event.Item1, @event.Item2);
             return priorityEvent;
         }
 
-        public static PriorityEvent<T> operator -(PriorityEvent<T> priorityEvent, T @event)
+        public static PriorityEvent<T, TPriority> operator -(PriorityEvent<T, TPriority> priorityEvent, T @event)
         {
             priorityEvent.Remove(@event);
             return priorityEvent;

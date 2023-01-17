@@ -15,14 +15,12 @@ namespace Minerva.Module
             return instance ? instance : null;
         }
 
-        public static T GetOrAddComponent<T>(this Component component) where T : UnityEngine.Component
+        public static T GetOrAddComponent<T>(this Component component) where T : Component
         {
-            T t = component.GetComponent<T>();
-            if (t) { return t; }
-            return component.gameObject.AddComponent<T>();
+            return component.gameObject.GetOrAddComponent<T>();
         }
 
-        public static T GetOrAddComponent<T>(this GameObject component) where T : UnityEngine.Component
+        public static T GetOrAddComponent<T>(this GameObject component) where T : Component
         {
             T t = component.GetComponent<T>();
             if (t) { return t; }
