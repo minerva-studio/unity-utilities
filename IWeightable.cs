@@ -39,7 +39,7 @@ namespace Minerva.Module
         /// <param name="weightables"></param>
         /// <returns></returns> 
         public static T Weight<T>(this IList<IWeightable<T>> weightables, int seed) => weightables.WeightNode(seed).Item;
-        
+
         /// <summary>
         /// return a random item from the list, distributed by the weight given
         /// </summary>

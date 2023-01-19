@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-namespace Minerva.Module
+﻿namespace Minerva.Module
 {
     public class ReadOnlyIfAttribute : ConditionalFieldAttribute
     {

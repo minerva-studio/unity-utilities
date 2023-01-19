@@ -50,8 +50,8 @@ namespace Minerva.Module.Editor
                 EditorGUI.indentLevel--;
 
                 GUILayout.FlexibleSpace();
-                
-                
+
+
                 GUILayout.BeginHorizontal();
                 GUI.enabled = page > 0;
                 if (GUILayout.Button("Last", GUILayout.MaxWidth(80))) page--;
