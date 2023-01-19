@@ -128,12 +128,10 @@ namespace Minerva.Module
         /// <returns></returns>
         public static T Mode<T>(this IEnumerable<T> ts)
         {
-            Dictionary<T, int> keyValuePairs = new Dictionary<T, int>();
+            Dictionary<T, int> keyValuePairs = new();
             foreach (var item in ts)
             {
-                if (!keyValuePairs.ContainsKey(item))
-                    keyValuePairs.Add(item, 1);
-                else
+                if (!keyValuePairs.TryAdd(item, 1))
                     keyValuePairs[item] += 1;
             }
             foreach (var item in keyValuePairs)
@@ -352,6 +350,36 @@ namespace Minerva.Module
             }
 
             return list;
+        }
+
+        public static IEnumerable<(int, int)> Range((int x, int y) start, (int x, int y) count)
+        {
+            int xMax = start.x + count.x;
+            int yMax = start.y + count.y;
+            for (int x = start.x; x < xMax; x++)
+            {
+                for (int y = start.y; y < yMax; y++)
+                {
+                    yield return (x, y);
+                }
+            }
+        }
+
+        public static IEnumerable<(int x, int y, int z)> Range((int x, int y, int z) start, (int x, int y, int z) count)
+        {
+            int xMax = start.x + count.x;
+            int yMax = start.y + count.y;
+            int zMax = start.z + count.z;
+            for (int x = start.x; x < xMax; x++)
+            {
+                for (int y = start.y; y < yMax; y++)
+                {
+                    for (int z = start.z; z < zMax; z++)
+                    {
+                        yield return (x, y, z);
+                    }
+                }
+            }
         }
     }
 }

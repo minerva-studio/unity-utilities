@@ -296,6 +296,39 @@ namespace Minerva.Module
 
 
 
+        public static IEnumerable<Vector3Int> Range(Vector3Int start, Vector3Int count)
+        {
+            int upperX = start.x + count.x;
+            int upperY = start.y + count.y;
+            int upperZ = start.z + count.z;
+
+            for (int x = start.x; x < upperX; x++)
+            {
+                for (int y = start.y; y < upperY; y++)
+                {
+                    for (int z = start.z; z < upperZ; z++)
+                    {
+                        yield return new Vector3Int(x, y, z);
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<Vector2Int> Range(Vector2Int start, Vector2Int count)
+        {
+            int upperX = start.x + count.x;
+            int upperY = start.y + count.y;
+            for (int x = start.x; x < upperX; x++)
+            {
+                for (int y = start.y; y < upperY; y++)
+                {
+                    yield return new Vector2Int(x, y);
+                }
+            }
+        }
+
+
+
         public static Vector3Int ToVector3Int(this Vector2Int vector2Int, int z = 0)
         {
             return new Vector3Int(vector2Int.x, vector2Int.y, z);
