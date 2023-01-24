@@ -9,15 +9,15 @@ namespace Minerva.Module
     [Serializable]
     public struct RangeInt
     {
-        //
-        // Summary:
-        //     The starting index of the range, where 0 is the first position, 1 is the second,
-        //     2 is the third, and so on.
+        /// <summary>
+        /// The starting index of the range, where 0 is the first position, 1 is the second,
+        /// 2 is the third, and so on.
+        /// </summary> 
         public int min;
 
-        //
-        // Summary:
-        //     The end index of the range (not inclusive, unless min == max, range == 0).
+        /// <summary>
+        /// The end index of the range (not inclusive, unless min == max, range == 0).
+        /// </summary>   
         public int max;
 
         /// <summary>
@@ -25,6 +25,9 @@ namespace Minerva.Module
         /// </summary>
         public int length => max - min;
 
+        /// <summary>
+        /// A random value in the integer range
+        /// </summary>
         public int value { get => min == max ? min : UnityEngine.Random.Range(min, max); }
 
         /// <summary>

@@ -8,7 +8,7 @@ namespace Minerva.Module
     [Serializable]
     public struct Range
     {
-        public static RangeInt Zero => new RangeInt(0, 0);
+        public static Range Zero => new(0, 0);
 
 
         /// <summary>
