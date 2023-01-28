@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Minerva.Module
+namespace Minerva.Module.Geomtry
 {
     /// <summary>
     /// Implementation of Triangulation by Ear Clipping
@@ -54,7 +54,7 @@ namespace Minerva.Module
             Vector3 normal = Vector3.zero;
             for (var i = 0; i < points.Count; i++)
             {
-                var j = (i + 1) % (points.Count);
+                var j = (i + 1) % points.Count;
                 normal.x += (points[i].y - points[j].y) * (points[i].z + points[j].z);
                 normal.y += (points[i].z - points[j].z) * (points[i].x + points[j].x);
                 normal.z += (points[i].x - points[j].x) * (points[i].y + points[j].y);
@@ -85,7 +85,7 @@ namespace Minerva.Module
                 }
                 ConnectionEdge current = new ConnectionEdge(p0, polygon, dict[p0]);
 
-                first = (i == 0) ? current : first; // remember first
+                first = i == 0 ? current : first; // remember first
 
                 if (prev != null)
                 {
@@ -221,7 +221,7 @@ namespace Minerva.Module
         {
             M = FindLargest(polygons[holeIndex]);
 
-            var direction = Vector3.Cross((polygons[holeIndex].Start.Next.Origin - polygons[holeIndex].Start.Origin), Normal);
+            var direction = Vector3.Cross(polygons[holeIndex].Start.Next.Origin - polygons[holeIndex].Start.Origin, Normal);
             var I = FindPointI(M, polygons, holeIndex, direction);
 
             Vector3 res;
@@ -424,7 +424,7 @@ namespace Minerva.Module
                 var s = Vector3.Dot(crossVec3and2, crossVec1and2) / crossVec1and2.sqrMagnitude;
                 if (s >= 0)
                 {
-                    intersection = linePoint1 + (lineVec1 * s);
+                    intersection = linePoint1 + lineVec1 * s;
                     distanceSquared = (lineVec1 * s).sqrMagnitude;
                     if ((intersection - linePoint3).sqrMagnitude + (intersection - linePoint4).sqrMagnitude <=
                         lineVec2.sqrMagnitude)
@@ -503,7 +503,7 @@ namespace Minerva.Module
             {
                 if (ReferenceEquals(null, obj)) return false;
                 if (ReferenceEquals(this, obj)) return true;
-                if (obj.GetType() != this.GetType()) return false;
+                if (obj.GetType() != GetType()) return false;
                 return Equals((ConnectionEdge)obj);
             }
 
@@ -511,7 +511,7 @@ namespace Minerva.Module
             {
                 unchecked
                 {
-                    return ((Next.Origin != null ? Next.Origin.GetHashCode() : 0) * 397) ^ (Origin != null ? Origin.GetHashCode() : 0);
+                    return (Next.Origin != null ? Next.Origin.GetHashCode() : 0) * 397 ^ (Origin != null ? Origin.GetHashCode() : 0);
                 }
             }
 
@@ -623,15 +623,15 @@ namespace Minerva.Module
 
             public static bool PointInOrOnTriangle(Vector3 prevPoint, Vector3 curPoint, Vector3 nextPoint, Vector3 nonConvexPoint, Vector3 normal)
             {
-                var res0 = Misc.GetOrientation(prevPoint, nonConvexPoint, curPoint, normal);
-                var res1 = Misc.GetOrientation(curPoint, nonConvexPoint, nextPoint, normal);
-                var res2 = Misc.GetOrientation(nextPoint, nonConvexPoint, prevPoint, normal);
+                var res0 = GetOrientation(prevPoint, nonConvexPoint, curPoint, normal);
+                var res1 = GetOrientation(curPoint, nonConvexPoint, nextPoint, normal);
+                var res2 = GetOrientation(nextPoint, nonConvexPoint, prevPoint, normal);
                 return res0 != 1 && res1 != 1 && res2 != 1;
             }
 
             public static float PointLineDistance(Vector3 p1, Vector3 p2, Vector3 p3)
             {
-                return Vector3.Cross((p2 - p1), p3 - p1).sqrMagnitude;
+                return Vector3.Cross(p2 - p1, p3 - p1).sqrMagnitude;
             }
 
             internal enum PropertyConstants

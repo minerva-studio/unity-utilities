@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace Minerva.Module
+namespace Minerva.Module.Geomtry
 {
     /// <summary>
     /// A class representing a polygon
