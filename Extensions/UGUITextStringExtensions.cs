@@ -4,6 +4,9 @@ using UnityEngine.UI;
 
 namespace Minerva.Module
 {
+    /// <summary>
+    /// Text extension for UGUI (also able to use for TMP)
+    /// </summary>
     public static class UGUITextStringExtensions
     {
 #if UNITY_EDITOR

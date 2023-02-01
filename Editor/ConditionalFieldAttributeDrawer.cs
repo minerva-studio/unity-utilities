@@ -64,10 +64,31 @@ namespace Minerva.Module.Editor
             catch (Exception e)
             {
                 Debug.LogException(e);
-                label.text += " (default mode)";
-                label.tooltip += $"Cannot found the path {attr.path} or it is not a boolean";
+                DrawFailed(position, property, label, attr);
+            }
+        }
+
+        private static void DrawFailed(Rect position, SerializedProperty property, GUIContent label, ConditionalFieldAttribute attr)
+        {
+            label.text += " (default mode)";
+            label.tooltip += $"Cannot found the path {attr.path} or it is not a boolean";
+            try
+            {
+                //ScriptAttributeUtility
+                //PropertyHandler
+                var type = Type.GetType("ScriptAttributeUtility");
+                var method = type.GetMethod("GetHandler", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+                object handler = method.Invoke(null, new object[] { property });
+                var OnGUIMethod = handler.GetType().GetMethod("OnGUI", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                OnGUIMethod.Invoke(handler, new object[] { position, property, null, true });
+            }
+            catch (ExitGUIException) { throw; }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
                 EditorGUI.PropertyField(position, property, label, true);
             }
+
         }
 
         protected abstract float GetFieldHeight(SerializedProperty property, GUIContent label, bool conditionMatches);
