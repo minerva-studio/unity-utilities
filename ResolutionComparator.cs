@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Minerva.Module
@@ -12,7 +13,7 @@ namespace Minerva.Module
 
         public int GetHashCode(Resolution obj)
         {
-            return obj.GetHashCode();
+            return HashCode.Combine(obj.width, obj.height);
         }
     }
 }
