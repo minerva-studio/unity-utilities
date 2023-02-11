@@ -3,12 +3,12 @@ using UnityEngine;
 
 namespace Minerva.Module.Editor
 {
-    //[CustomPropertyDrawer(typeof(MinMaxValueInt))]
+    [CustomPropertyDrawer(typeof(MinMaxValueInt))]
     public class MinMaxValueIntDrawer : PropertyDrawer
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUIUtility.singleLineHeight;
+            return (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing) * 2;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -18,38 +18,37 @@ namespace Minerva.Module.Editor
             SerializedProperty value = property.FindPropertyRelative(nameof(minMaxValue.value));
             SerializedProperty range = property.FindPropertyRelative(nameof(minMaxValue.range));
 
-            Rect singleLine = position;
-            singleLine.height = EditorGUIUtility.singleLineHeight;
-            float fullWidth = singleLine.width;
-            //property.isExpanded = EditorGUI.Foldout(singleLine, property.isExpanded, label);
-            Rect labelRect = singleLine;
+            Rect labelRect = position;
+            labelRect.height = EditorGUIUtility.singleLineHeight;
             labelRect.width = EditorGUIUtility.labelWidth;
-            EditorGUI.LabelField(singleLine, label);
+            EditorGUI.LabelField(labelRect, label);
+
+            Rect random = position;
+            random.x += EditorGUIUtility.labelWidth;
+            random.height = EditorGUIUtility.singleLineHeight;
+            var currIndent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
+            EditorGUI.PropertyField(random, randomized, new GUIContent("Randomize"));
+            EditorGUI.indentLevel = currIndent;
+
+
+            Rect valRect = position;
+            valRect.height = EditorGUIUtility.singleLineHeight;
+            valRect.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
             EditorGUI.indentLevel++;
-
-            if (property.isExpanded)
+            if (randomized.boolValue)
             {
-                singleLine.x += EditorGUIUtility.labelWidth - EditorGUI.indentLevel * 15f;
-                singleLine.width = EditorGUIUtility.singleLineHeight * 8;
-                EditorGUI.LabelField(singleLine, new GUIContent("Randomize"));
-
-                singleLine.x += EditorGUIUtility.singleLineHeight * 4;
-                singleLine.width = EditorGUIUtility.singleLineHeight;
-                randomized.boolValue = EditorGUI.Toggle(singleLine, randomized.boolValue);
-
-                singleLine.x += EditorGUIUtility.singleLineHeight * 5;
-                singleLine.width = fullWidth - EditorGUIUtility.singleLineHeight * 7 - EditorGUIUtility.labelWidth;
-                if (randomized.boolValue)
-                {
-                    value.intValue = EditorGUI.IntField(singleLine, new GUIContent("Value"), value.intValue);
-                }
-                else
-                {
-                    RangeIntDrawer.Draw(singleLine, range);
-                }
+                int indent = EditorGUI.indentLevel * 15;
+                valRect.x += indent;
+                valRect.width -= indent;
+                RangeIntDrawer.Draw(valRect, range);
+            }
+            else
+            {
+                EditorGUI.PropertyField(valRect, value, true);
             }
             EditorGUI.indentLevel--;
-            EditorGUI.EndFoldoutHeaderGroup();
+
         }
     }
 }

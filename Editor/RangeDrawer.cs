@@ -15,13 +15,18 @@ namespace Minerva.Module.Editor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            Range range;
             Rect singleProperty = position;
             singleProperty.width = EditorGUIUtility.labelWidth;
             label = EditorGUI.BeginProperty(position, label, property);
-            SerializedProperty minP = property.FindPropertyRelative(nameof(range.min));
-            SerializedProperty maxP = property.FindPropertyRelative(nameof(range.max));
             EditorGUI.LabelField(singleProperty, label);
+            Draw(position, property);
+            EditorGUI.EndProperty();
+        }
+
+        public static void Draw(Rect position, SerializedProperty property)
+        {
+            SerializedProperty minP = property.FindPropertyRelative(nameof(Range.min));
+            SerializedProperty maxP = property.FindPropertyRelative(nameof(Range.max));
             float[] arr = new float[2];
             arr[0] = minP.floatValue;
             arr[1] = maxP.floatValue;
@@ -41,7 +46,6 @@ namespace Minerva.Module.Editor
             {
                 minP.floatValue = maxP.floatValue;
             }
-            EditorGUI.EndProperty();
         }
     }
 }
