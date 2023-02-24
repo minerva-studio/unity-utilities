@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
+using static UnityEditor.Progress;
 
 namespace Minerva.Module
 {
@@ -41,6 +43,7 @@ namespace Minerva.Module
         /// <returns></returns>
         public static void MoveRectTransformInScreen(this RectTransform rectTransform)
         {
+            ForceRebuildLayoutImmediateRecursive(rectTransform);
             var parent = rectTransform.parent;
             // local position in camera
             var localCamPos = LocalToCameraPosition(parent, rectTransform.localPosition);
@@ -68,6 +71,15 @@ namespace Minerva.Module
                     rectTransform.localPosition = CameraToLocalPosition(parent, localCamPos);
                 }
             }
+        }
+
+        public static void ForceRebuildLayoutImmediateRecursive(this RectTransform rectTransform)
+        {
+            foreach (var item in rectTransform.GetComponentsInChildren<RectTransform>())
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(item);
+            }
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
         }
 
         /// <summary>
