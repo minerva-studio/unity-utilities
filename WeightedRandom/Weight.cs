@@ -1,8 +1,11 @@
-﻿namespace Minerva.Module.WeightedRandom
+﻿using System;
+
+namespace Minerva.Module.WeightedRandom
 {
     /// <summary>
     /// A default struct for weight
     /// </summary>
+    [Serializable]
     public struct Weight : IWeightable
     {
         public object item;
@@ -22,6 +25,7 @@
     /// A default struct for weight
     /// </summary>
     /// <typeparam name="T"></typeparam>
+    [Serializable]
     public struct Weight<T> : IWeightable<T>
     {
         public T item;
