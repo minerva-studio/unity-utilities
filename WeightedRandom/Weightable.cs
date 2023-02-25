@@ -34,6 +34,22 @@ namespace Minerva.Module.WeightedRandom
         /// <returns></returns> 
         public static TItem Weight<T, TItem>(this IList<T> weightables) where T : IWeightable<TItem> => weightables.WeightNode().Item;
 
+        /// <summary>
+        /// return a random item from the list, distributed by the weight given
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <returns></returns> 
+        public static TItem Weight<TItem>(this IList<Weight<TItem>> weightables) => weightables.WeightNode().Item;
+
+        /// <summary>
+        /// return a random item from the list, distributed by the weight given
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <returns></returns> 
+        public static object Weight(this IList<Weight> weightables) => weightables.WeightNode().Item;
+
 
 
         /// <summary>
