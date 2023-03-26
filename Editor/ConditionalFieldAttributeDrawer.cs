@@ -68,6 +68,9 @@ namespace Minerva.Module.Editor
             }
         }
 
+        /// <summary>
+        /// Calling <see cref="ScriptAttributeUtility"/> and <see cref="PropertyHandler"/> by using reflection
+        /// </summary>
         private static void DrawFailed(Rect position, SerializedProperty property, GUIContent label, ConditionalFieldAttribute attr)
         {
             label.text += " (default mode)";

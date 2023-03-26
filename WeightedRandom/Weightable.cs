@@ -10,6 +10,58 @@ namespace Minerva.Module.WeightedRandom
     /// </summary>
     public static class Weightable
     {
+
+        /// <summary>
+        /// return a random item from the list, distributed by the weight given
+        /// </summary>
+        /// <typeparam name="T">List type</typeparam>
+        /// <typeparam name="TItem">Item type</typeparam>
+        /// <param name="weightables"></param>
+        /// <param name="items"></param>
+        /// <param name="weight"></param>
+        /// <returns></returns>
+        public static TItem Weight<T, TItem>(this IList<T> weightables, Func<T, (TItem, int)> items)
+            => Weight(weightables, i => items(i).Item1, i => items(i).Item2);
+
+        /// <summary>
+        /// return a random item from the list, distributed by the weight given
+        /// </summary>
+        /// <typeparam name="T">List type</typeparam>
+        /// <typeparam name="TItem">Item type</typeparam>
+        /// <param name="weightables"></param>
+        /// <param name="items"></param>
+        /// <param name="weight"></param>
+        /// <returns></returns>
+        public static TItem Weight<T, TItem>(this IList<T> weightables, Func<T, TItem> items, Func<T, int> weight)
+        {
+            if (weightables == null) throw new ArgumentNullException("The list of weightables is null");
+
+
+            if (weightables.Count == 0) return default;
+
+            int totalWeight = weightables.Sum(w => weight(w));
+            if (totalWeight == 0)
+            {
+                T weightable = weightables.RandomGet();
+                return weightable != null ? items(weightable) : default;
+            }
+
+            int currentTotal = 0;
+            int position = UnityEngine.Random.Range(0, totalWeight);
+            T item = default;
+            for (int i = 0; currentTotal < totalWeight && i < weightables.Count; i++)
+            {
+                var weightItem = weightables[i];
+                currentTotal += weight(weightItem);
+                item = weightItem;
+                if (currentTotal > position)
+                {
+                    return items(weightItem);
+                }
+            }
+            return items(item);
+        }
+
         /// <summary>
         /// return a random item from the list, distributed by the weight given
         /// </summary>
