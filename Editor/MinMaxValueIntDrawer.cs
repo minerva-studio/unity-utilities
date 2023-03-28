@@ -47,6 +47,8 @@ namespace Minerva.Module.Editor
             {
                 EditorGUI.PropertyField(valRect, value, true);
             }
+
+            property.serializedObject.ApplyModifiedProperties();
             EditorGUI.indentLevel--;
 
         }
