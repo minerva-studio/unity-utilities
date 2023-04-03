@@ -343,20 +343,36 @@ namespace Minerva.Module
         {
             return new Vector2(UnityEngine.Random.value * x, UnityEngine.Random.value * y);
         }
+        public static Vector2 Random(Vector2 min, Vector2 max)
+        {
+            return new Vector2(UnityEngine.Random.Range(min.x, max.x), UnityEngine.Random.Range(min.y, max.y));
+        }
 
         public static Vector2Int Random(int x, int y)
         {
             return new Vector2Int(UnityEngine.Random.Range(0, x), UnityEngine.Random.Range(0, y));
+        }
+        public static Vector2Int Random(Vector2Int min, Vector2Int max)
+        {
+            return new Vector2Int(UnityEngine.Random.Range(min.x, max.x), UnityEngine.Random.Range(min.y, max.y));
         }
 
         public static Vector3 Random(float x, float y, float z)
         {
             return new Vector3(UnityEngine.Random.value * x, UnityEngine.Random.value * y, UnityEngine.Random.value * z);
         }
+        public static Vector3 Random(Vector3 min, Vector3 max)
+        {
+            return new Vector3(UnityEngine.Random.Range(min.x, max.x), UnityEngine.Random.Range(min.y, max.y), UnityEngine.Random.Range(min.z, max.z));
+        }
 
         public static Vector3Int Random(int x, int y, int z)
         {
             return new Vector3Int(UnityEngine.Random.Range(0, x), UnityEngine.Random.Range(0, y), UnityEngine.Random.Range(0, z));
+        }
+        public static Vector3Int Random(Vector3Int min, Vector3Int max)
+        {
+            return new Vector3Int(UnityEngine.Random.Range(min.x, max.x), UnityEngine.Random.Range(min.y, max.y), UnityEngine.Random.Range(min.z, max.z));
         }
 
 
