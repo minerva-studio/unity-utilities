@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Minerva.Module
 {
     /// <summary>
-    /// A uuid label used in AI
+    /// A serializable unique identifer, compatible with <see cref="Guid"/>
     /// </summary>
     [Serializable]
     public struct UUID : IComparable, IComparable<UUID>, IEquatable<UUID>
