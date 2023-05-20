@@ -261,17 +261,17 @@ namespace Minerva.Module.Editor
         /// Create a right click menu for last GUI Rect
         /// </summary>
         /// <param name="menu"></param>
-        public static void RightClickMenu(GenericMenu menu)
+        public static bool RightClickMenu(GenericMenu menu)
         {
             Rect rect = GUILayoutUtility.GetLastRect();
-            RightClickMenu(menu, rect);
+            return RightClickMenu(menu, rect);
         }
 
         /// <summary>
         /// Create a right click menu for Given Rect
         /// </summary>
         /// <param name="menu"></param>
-        public static void RightClickMenu(GenericMenu menu, Rect rect)
+        public static bool RightClickMenu(GenericMenu menu, Rect rect)
         {
             // mouse down, right click, and is within last rect
             if (Event.current.type == EventType.MouseDown
@@ -279,7 +279,9 @@ namespace Minerva.Module.Editor
                 && rect.Contains(Event.current.mousePosition))
             {
                 menu.ShowAsContext();
+                return true;
             }
+            return false;
         }
 
 
