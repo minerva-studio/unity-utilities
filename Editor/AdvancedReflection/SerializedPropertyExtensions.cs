@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEditor;
@@ -25,7 +26,31 @@ namespace Minerva.Module.Editor
             return value;
         }
 
+        /// (Extension) Get the member info of the property if exist
+        public static MemberInfo GetMemberInfo(this SerializedProperty property)
+        {
+            string propertyPath = property.propertyPath;
+            object value = property.serializedObject.targetObject;
+            object lastValue = property.serializedObject.targetObject;
+            PropertyPathComponent token = default;
+            PropertyPathComponent lastToken;
+
+            int i = 0;
+            while (true)
+            {
+                lastToken = token;
+                if (!NextPathComponent(propertyPath, ref i, out token)) break;
+
+                lastValue = value;
+                value = GetPathComponentValue(value, token);
+            }
+
+            return GetPathComponentInfo(lastValue, lastToken);
+        }
+
+        /// <summary>
         /// (Extension) Set the value of the serialized property.
+        /// </summary>
         public static void SetValue(this SerializedProperty property, object value)
         {
             Undo.RecordObject(property.serializedObject.targetObject, $"Set {property.name}");
@@ -112,6 +137,15 @@ namespace Minerva.Module.Editor
             return true;
         }
 
+        static MemberInfo GetPathComponentInfo(object container, PropertyPathComponent component)
+        {
+            // cannot get member info from list
+            if (component.propertyName == null)
+                return null;
+            else
+                return GetMemberInfo(container, component.propertyName);
+        }
+
         static object GetPathComponentValue(object container, PropertyPathComponent component)
         {
             if (component.propertyName == null)
@@ -128,6 +162,20 @@ namespace Minerva.Module.Editor
                 SetMemberValue(container, component.propertyName, value);
         }
 
+        static MemberInfo GetMemberInfo(object container, string name)
+        {
+            if (container == null)
+                return null;
+            var type = container.GetType();
+            var members = type.GetMember(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            for (int i = 0; i < members.Length; ++i)
+            {
+                if (members[i] is FieldInfo or PropertyInfo)
+                    return members[i];
+            }
+            return null;
+        }
+
         static object GetMemberValue(object container, string name)
         {
             if (container == null)
@@ -136,6 +184,8 @@ namespace Minerva.Module.Editor
             var members = type.GetMember(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
             for (int i = 0; i < members.Length; ++i)
             {
+                if (Attribute.IsDefined(members[i], typeof(ObsoleteAttribute))) continue;
+
                 if (members[i] is FieldInfo field)
                     return field.GetValue(container);
                 else if (members[i] is PropertyInfo property)

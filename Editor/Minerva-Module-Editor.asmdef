@@ -1,10 +1,12 @@
 {
-    "name": "Library-of-Meialia-Module",
+    "name": "Minerva-Module-Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:6055be8ebefd69e48b49212b09b47b2f"
+        "GUID:c705793dc967c014991b8edebb6e106e"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
