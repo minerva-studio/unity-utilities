@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -245,9 +246,14 @@ namespace Minerva.Module.Editor
 
 
 
-        public static PageList DrawListPage(SerializedProperty serializedProperty)
+        public static SerializedPropertyPageList DrawListPage(SerializedProperty serializedProperty)
         {
-            return new PageList(serializedProperty);
+            return new SerializedPropertyPageList(serializedProperty);
+        }
+
+        public static PageList DrawListPage<T>(List<T> list, Action<T> draw)
+        {
+            return new GenericListPageList<T>(list, draw);
         }
 
 

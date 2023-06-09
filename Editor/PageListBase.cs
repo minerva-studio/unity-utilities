@@ -6,30 +6,30 @@ namespace Minerva.Module.Editor
 {
     public static partial class EditorFieldDrawers
     {
-        public class PageList
+        public abstract class PageList
         {
-            public int windowMinWidth;
-
-            public Action OnSortList;
             public Action OnDrawHeader;
+            public Action OnSortList;
+
+            public int windowMinWidth;
 
             int maxPage;
             int page;
-            int linesPerPage;
-            SerializedProperty entryList;
 
 
-            public PageList(SerializedProperty entryList, int linesPerPage = 10)
-            {
-                this.windowMinWidth = 100;
-                this.entryList = entryList;
-                this.linesPerPage = linesPerPage;
-            }
+            public int LinesPerPage { get; set; }
+
+            public abstract int Size { get; }
+
+            protected abstract void DrawElement(int i);
+
+            public abstract void AddElement();
+
 
             public void Draw(string header = "Entries")
             {
                 var state = GUI.enabled;
-                EditorGUILayout.LabelField($"{header} ({page * linesPerPage}/{entryList.arraySize}): ");
+                EditorGUILayout.LabelField($"{header} ({page * LinesPerPage}/{Size}): ");
                 OnDrawHeader?.Invoke();
 
 
@@ -40,12 +40,10 @@ namespace Minerva.Module.Editor
                 GUI.backgroundColor = color;
 
                 EditorGUI.indentLevel++;
-                maxPage = (entryList.arraySize - 1) / linesPerPage;
-                for (int i = page * linesPerPage; i < page * linesPerPage + linesPerPage && i < entryList.arraySize; i++)
+                maxPage = (Size - 1) / LinesPerPage;
+                for (int i = page * LinesPerPage; i < page * LinesPerPage + LinesPerPage && i < Size; i++)
                 {
-                    SerializedProperty element = entryList.GetArrayElementAtIndex(i);
-                    element.isExpanded = true;
-                    EditorGUILayout.PropertyField(element, true);
+                    DrawElement(i);
                 }
                 EditorGUI.indentLevel--;
 
@@ -69,7 +67,7 @@ namespace Minerva.Module.Editor
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Add"))
                 {
-                    entryList.InsertArrayElementAtIndex(entryList.arraySize);
+                    AddElement();
                 }
                 if (OnSortList != null && GUILayout.Button("Sort")) OnSortList?.Invoke();
                 GUILayout.EndHorizontal();
