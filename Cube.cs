@@ -6,7 +6,7 @@ namespace Minerva.Module
 {
     /// <summary>
     /// a 3d version of <see cref="Rect"/>
-    /// <br></br>
+    /// <br/>
     /// use <see cref="Bounds"/> instead
     /// </summary>
     [Serializable]

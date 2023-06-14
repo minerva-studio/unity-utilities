@@ -10,7 +10,7 @@ namespace Minerva.Module.Editor
     /// <summary>
     /// Provide simple value get/set methods for SerializedProperty.  Can be used with
     /// any data types and with arbitrarily deeply-pathed properties.
-    /// <br></br>
+    /// <br/>
     /// 该死，我也不记得我从哪里摸来的代码了，如果这些代码需要维护的话那就寄了
     /// </summary>
     public static class SerializedPropertyExtensions

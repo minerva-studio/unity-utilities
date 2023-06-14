@@ -67,7 +67,7 @@ namespace Minerva.Module
 
         /// <summary>
         /// find whether two IEnumerable matchs all elements in the list (same count, call IEquatable)
-        /// <br></br>
+        /// <br/>
         /// as list == list for all element (unordered)
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -82,7 +82,7 @@ namespace Minerva.Module
 
         /// <summary>
         /// find whether two IEnumerable matchs all elements in the list (same count, call IEquatable)
-        /// <br></br>
+        /// <br/>
         /// as list == list for all element (ordered)
         /// </summary>
         /// <typeparam name="T"></typeparam>

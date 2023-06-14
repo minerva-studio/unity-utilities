@@ -5,7 +5,7 @@ namespace Minerva.Module
 {
     /// <summary>
     /// Mark that the method is called in Editor, it is not useless
-    /// <br></br>
+    /// <br/>
     /// Not useful really
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]

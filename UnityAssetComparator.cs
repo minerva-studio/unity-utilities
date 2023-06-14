@@ -5,7 +5,7 @@ namespace Minerva.Module
 {
     /// <summary>
     /// Equality comparator for Prefabs
-    /// <br></br>
+    /// <br/>
     /// Note: Prefab reference might point to a component, not the gameobject itself. This can cause some duplication on a list of prefabs
     /// </summary>
     public class UnityAssetComparator : IEqualityComparer<Object>
@@ -30,7 +30,7 @@ namespace Minerva.Module
 
     /// <summary>
     /// Equality comparator for Prefabs
-    /// <br></br>
+    /// <br/>
     /// Note: Prefab reference might point to a component, not the gameobject itself. This can cause some duplication on a list of prefabs
     /// </summary>
     public class UnityAssetComparator<T> : IEqualityComparer<T> where T : Object
@@ -55,7 +55,7 @@ namespace Minerva.Module
 
     /// <summary>
     /// Equality comparator for Prefabs
-    /// <br></br>
+    /// <br/>
     /// Note: Prefab reference might point to a component, not the gameobject itself. This can cause some duplication on a list of prefabs
     /// </summary>
     public class UnityAssetNameComparator<T> : IEqualityComparer<T> where T : Object

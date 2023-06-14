@@ -8,7 +8,7 @@ namespace Minerva.Module.UI
 {
     /// <summary>
     /// Auto scroll
-    /// <br></br>
+    /// <br/>
     /// <see cref="https://gist.github.com/spireggs/2b8221a2961f2352542fad8f9a9dc07e"/>
     /// </summary>
     [RequireComponent(typeof(ScrollRect))]

@@ -6,9 +6,9 @@ namespace Minerva.Module.Geomtry
 {
     /// <summary>
     /// Implementation of Triangulation by Ear Clipping
-    /// <br></br>
+    /// <br/>
     /// by David Eberly
-    /// <br></br>
+    /// <br/>
     /// <see cref="https://github.com/NMO13/earclipper"/>
     /// </summary>
     public sealed class PolygonTriangulation

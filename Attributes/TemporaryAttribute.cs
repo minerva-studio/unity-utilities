@@ -5,7 +5,7 @@ namespace Minerva.Module
 {
     /// <summary>
     /// a field, method, or anything that is temporary
-    /// <br></br>
+    /// <br/>
     /// Not useful really
     /// </summary>
     [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
