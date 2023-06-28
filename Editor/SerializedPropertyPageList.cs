@@ -35,7 +35,7 @@ namespace Minerva.Module.Editor
 
         public class GenericListPageList<T> : PageList
         {
-            List<T> entryList;
+            public List<T> entryList;
             Action<T> drawer;
 
             public override int Size => entryList.Count;

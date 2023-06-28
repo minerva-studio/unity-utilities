@@ -12,14 +12,14 @@ namespace Minerva.Module.Editor
             public Action OnSortList;
 
             public int windowMinWidth;
-
-            int maxPage;
             int page;
 
 
+            private int FirstIndex => (page - 1) * LinesPerPage;
+            private int MaxPage => (Size - 1) / LinesPerPage + 1;
             public int LinesPerPage { get; set; }
-
             public abstract int Size { get; }
+
 
             protected abstract void DrawElement(int i);
 
@@ -28,8 +28,10 @@ namespace Minerva.Module.Editor
 
             public void Draw(string header = "Entries")
             {
+                page = Mathf.Max(Mathf.Min(MaxPage, page), 1);
+
                 var state = GUI.enabled;
-                EditorGUILayout.LabelField($"{header} ({page * LinesPerPage}/{Size}): ");
+                EditorGUILayout.LabelField($"{header} ({FirstIndex + 1}/{Size}): ");
                 OnDrawHeader?.Invoke();
 
 
@@ -40,8 +42,7 @@ namespace Minerva.Module.Editor
                 GUI.backgroundColor = color;
 
                 EditorGUI.indentLevel++;
-                maxPage = (Size - 1) / LinesPerPage;
-                for (int i = page * LinesPerPage; i < page * LinesPerPage + LinesPerPage && i < Size; i++)
+                for (int i = FirstIndex; i < FirstIndex + LinesPerPage && i < Size; i++)
                 {
                     DrawElement(i);
                 }
@@ -51,15 +52,15 @@ namespace Minerva.Module.Editor
 
 
                 GUILayout.BeginHorizontal();
-                GUI.enabled = page > 0;
+                GUI.enabled = page > 1;
                 if (GUILayout.Button("Last", GUILayout.MaxWidth(80))) page--;
                 GUI.enabled = state;
                 EditorGUILayout.LabelField("Page", GUILayout.MaxWidth(30));
-                if (maxPage != 0) page = EditorGUILayout.IntSlider(page, 0, maxPage);
+                if (MaxPage != 0) page = EditorGUILayout.IntSlider(page, 1, MaxPage);
                 else EditorGUILayout.LabelField("-");
-                GUILayout.Label($"of {maxPage}", GUILayout.MaxWidth(40));
-                page = Mathf.Max(Mathf.Min(maxPage, page), 0);
-                GUI.enabled = page < maxPage;
+                GUILayout.Label($"of {MaxPage}", GUILayout.MaxWidth(40));
+                page = Mathf.Max(Mathf.Min(MaxPage, page), 1);
+                GUI.enabled = page <= MaxPage;
                 if (GUILayout.Button("Next", GUILayout.MaxWidth(80))) page++;
                 GUI.enabled = state;
                 GUILayout.EndHorizontal();
@@ -75,6 +76,7 @@ namespace Minerva.Module.Editor
 
                 GUILayout.EndVertical();
             }
+
         }
     }
 }
