@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Text;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -68,26 +69,30 @@ namespace Minerva.Module
         {
             if (string.IsNullOrEmpty(text))
             {
-                return text;
+                return text ?? string.Empty;
             }
             if (text.Length < 2)
             {
                 return text.ToUpper();
             }
 
-            string baseString = text[0].ToString().ToUpper() + text.Substring(1, text.Length - 1);
+            StringBuilder sb = new();
+
+            sb.Append(char.ToUpper(text[0]));
             bool isCapitalized = true;
-            for (int i = 0; i < baseString.Length; i++)
+
+            for (int i = 1; i < text.Length; i++)
             {
-                bool isCurrentCapitalized = char.IsUpper(baseString, i);
-                if (isCurrentCapitalized && isCapitalized) continue;
+                bool isCurrentCapitalized = char.IsUpper(text, i);
                 if (isCurrentCapitalized && !isCapitalized)
                 {
-                    baseString = baseString.Substring(0, i) + " " + baseString.Substring(i);
+                    sb.Append(' ');
+                    sb.Append(char.ToUpper(text[i]));
                 }
+                else sb.Append(text[i]);
                 isCapitalized = isCurrentCapitalized;
             }
-            return baseString;
+            return sb.ToString();
         }
 
     }

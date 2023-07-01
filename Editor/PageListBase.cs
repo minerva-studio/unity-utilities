@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PlasticGui.WorkspaceWindow;
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -28,30 +29,36 @@ namespace Minerva.Module.Editor
 
             public void Draw(string header = "Entries")
             {
+                if (Event.current.type == EventType.ScrollWheel)
+                {
+                    page += Event.current.delta.y > 0 ? 1 : -1;
+                    page = Mathf.Min(MaxPage, Mathf.Max(0, page));
+                    EditorWindow.focusedWindow.Repaint();
+                    return;
+                }
+
                 page = Mathf.Max(Mathf.Min(MaxPage, page), 1);
+                DrawHeader(header);
 
-                var state = GUI.enabled;
-                EditorGUILayout.LabelField($"{header} ({FirstIndex + 1}/{Size}): ");
-                OnDrawHeader?.Invoke();
-
-
-                GUILayout.BeginVertical(
-                    SetRegionColor(Color.white * (80 / 255f), out var color),
-                    GUILayout.MinHeight(windowMinWidth + 60)
-                );
+                GUILayout.BeginVertical(SetRegionColor(Color.white * (80 / 255f), out var color), GUILayout.MinHeight(windowMinWidth + 60));
                 GUI.backgroundColor = color;
-
                 EditorGUI.indentLevel++;
                 for (int i = FirstIndex; i < FirstIndex + LinesPerPage && i < Size; i++)
                 {
                     DrawElement(i);
                 }
                 EditorGUI.indentLevel--;
-
                 GUILayout.FlexibleSpace();
 
+                DrawPageScroll();
+                DrawButtom();
+                GUILayout.EndVertical();
+            }
 
+            private void DrawPageScroll()
+            {
                 GUILayout.BeginHorizontal();
+                var state = GUI.enabled;
                 GUI.enabled = page > 1;
                 if (GUILayout.Button("Last", GUILayout.MaxWidth(80))) page--;
                 GUI.enabled = state;
@@ -63,8 +70,28 @@ namespace Minerva.Module.Editor
                 GUI.enabled = page <= MaxPage;
                 if (GUILayout.Button("Next", GUILayout.MaxWidth(80))) page++;
                 GUI.enabled = state;
-                GUILayout.EndHorizontal();
 
+                GUILayout.EndHorizontal();
+            }
+
+            private void DrawHeader(string header)
+            {
+                // empty
+                if (Size == 0)
+                {
+                    EditorGUILayout.LabelField($"{header} (-/0): ");
+                }
+                else
+                {
+                    int maxIndex = Mathf.Min(Size, FirstIndex + LinesPerPage);
+                    EditorGUILayout.LabelField($"{header} ({FirstIndex + 1}~{maxIndex}/{Size}): ");
+                }
+
+                OnDrawHeader?.Invoke();
+            }
+
+            private void DrawButtom()
+            {
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Add"))
                 {
@@ -72,11 +99,7 @@ namespace Minerva.Module.Editor
                 }
                 if (OnSortList != null && GUILayout.Button("Sort")) OnSortList?.Invoke();
                 GUILayout.EndHorizontal();
-
-
-                GUILayout.EndVertical();
             }
-
         }
     }
 }
