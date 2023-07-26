@@ -42,7 +42,6 @@ namespace Minerva.Module
         /// <returns></returns>
         public static void MoveRectTransformInScreen(this RectTransform rectTransform)
         {
-            ForceRebuildLayoutImmediateRecursive(rectTransform);
             var parent = rectTransform.parent;
             // local position in camera
             var localCamPos = LocalToCameraPosition(parent, rectTransform.localPosition);

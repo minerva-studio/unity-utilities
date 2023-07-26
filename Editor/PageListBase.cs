@@ -7,6 +7,9 @@ namespace Minerva.Module.Editor
 {
     public static partial class EditorFieldDrawers
     {
+        /// <summary>
+        /// Base class of an high performance list in editor by only showing few entries of the list not all of them
+        /// </summary>
         public abstract class PageList
         {
             public Action OnDrawHeader;
