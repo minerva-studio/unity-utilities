@@ -15,6 +15,8 @@ namespace Minerva.Module.Editor
     /// </summary>
     public static partial class EditorFieldDrawers
     {
+        private static MethodInfo getPropertyMethod;
+
         /// <summary>
         /// Draw field by <paramref name="field"/>, with label <paramref name="labelName"/>
         /// </summary>
@@ -259,6 +261,19 @@ namespace Minerva.Module.Editor
 
 
 
+
+        public static void DrawDefaultField(Rect position, SerializedProperty property)
+        {
+            if (getPropertyMethod == null)
+            {
+                var type = typeof(EditorGUILayout).Assembly.GetTypes().FirstOrDefault(t => t.Name == "ScriptAttributeUtility");
+                getPropertyMethod = type.GetMethod("GetHandler", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            }
+            object handler = getPropertyMethod.Invoke(null, new object[] { property });
+            //Debug.Log(handler);
+            var OnGUIMethod = handler.GetType().GetMethod("OnGUI", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            OnGUIMethod.Invoke(handler, new object[] { position, property, null, true });
+        }
 
 
 
