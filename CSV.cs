@@ -2,13 +2,12 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using static UnityEngine.EventSystems.EventTrigger;
 using UnityEditor;
-using UnityEngine;
 using Table = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
 namespace Minerva.Module
 {
+
     public class CSVFile
     {
         public Table table;
