@@ -2,10 +2,10 @@
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Minerva.Module
+namespace Minerva.Module.Tasks
 {
     /// <summary>
-    /// Tasks that behave like some of the Unity Coroutine <see cref="YieldInstruction"/>
+    /// Tasks that behave like some of the Unity Coroutine <see cref="YieldInstruction"/> and completely written in Task
     /// </summary>
     public static class UnityTask
     {
@@ -80,35 +80,18 @@ namespace Minerva.Module
         /// <returns></returns>
         public static Task WaitForSeconds(float seconds)
         {
-            var tcs = new TaskCompletionSource<bool>();
             var ending = Time.time + seconds;
             return WaitUntil(() => ending >= Time.time);
         }
 
         /// <summary>
-        /// Similar to <see cref="UnityEngine.WaitForFixedUpdate"/>
-        /// <br/>
-        /// Warning: this implementation is not garantee to be correct and suggest not to use it
-        /// </summary> 
+        /// Similar to <see cref="null"/>
+        /// </summary>
+        /// <param name="seconds"></param>
         /// <returns></returns>
-        public static Task WaitForFixedUpdate()
+        public static Task WaitForUpdate()
         {
-            var obj = new GameObject("Unity Task");
-            var tcs = new TaskCompletionSource<bool>();
-            obj.AddComponent<FixedUpdateWaiter>().tcs = tcs;
-            return tcs.Task;
-        }
-
-
-        class FixedUpdateWaiter : MonoBehaviour
-        {
-            internal TaskCompletionSource<bool> tcs;
-
-            private void FixedUpdate()
-            {
-                tcs.SetResult(true);
-                Destroy(gameObject);
-            }
+            return Task.Delay(TimeSpan.FromMilliseconds(1));
         }
     }
 }
