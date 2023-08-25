@@ -18,7 +18,7 @@ namespace Minerva.Module.Tasks
         {
             var tcs = new TaskCompletionSource<bool>();
 
-            void CheckPredicate()
+            async void CheckPredicate()
             {
                 if (predicate())
                 {
@@ -27,12 +27,11 @@ namespace Minerva.Module.Tasks
                 else
                 {
                     // Retry after a short delay
-                    Task.Delay(TimeSpan.FromSeconds(Time.deltaTime)).ContinueWith(_ => CheckPredicate());
+                    await Task.Delay(TimeSpan.FromSeconds(Time.deltaTime));
+                    CheckPredicate();
                 }
             }
-
             CheckPredicate();
-
             return tcs.Task;
         }
 
@@ -45,21 +44,20 @@ namespace Minerva.Module.Tasks
         {
             var tcs = new TaskCompletionSource<bool>();
 
-            void CheckPredicate()
+            async void CheckPredicate()
             {
                 if (predicate())
                 {
                     // Retry after a short delay
-                    Task.Delay(TimeSpan.FromSeconds(Time.deltaTime)).ContinueWith(_ => CheckPredicate());
+                    await Task.Delay(TimeSpan.FromSeconds(Time.deltaTime));
+                    CheckPredicate();
                 }
                 else
                 {
                     tcs.SetResult(true);
                 }
             }
-
             CheckPredicate();
-
             return tcs.Task;
         }
 
@@ -81,7 +79,7 @@ namespace Minerva.Module.Tasks
         public static Task WaitForSeconds(float seconds)
         {
             var ending = Time.time + seconds;
-            return WaitUntil(() => ending >= Time.time);
+            return WaitUntil(() => ending <= Time.time);
         }
 
         /// <summary>
