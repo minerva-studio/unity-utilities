@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -331,25 +332,20 @@ namespace Minerva.Module
         }
 
         /// <summary>
-        /// Return a shuffled Enumeration
+        /// An in-position shuffle
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="shuffle"></param>
-        /// <returns></returns>
-        public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> shuffle)
+        /// <param name="list"></param>
+        public static void Shuffle<T>(this T list) where T : IList
         {
-            List<T> list = new List<T>();
-            List<T> original = shuffle.ToList();
-
-            for (int i = original.Count() - 1; i >= 0; i--)
+            for (int i = list.Count - 1; i > 0; i--)
             {
-                int index = UnityEngine.Random.Range(0, original.Count);
-                list.Add(original[index]);
-                original.RemoveAt(index);
+                int j = UnityEngine.Random.Range(0, i + 1);
+                (list[j], list[i]) = (list[i], list[j]);
             }
-
-            return list;
         }
+
+
 
         public static IEnumerable<(int, int)> Range((int x, int y) start, (int x, int y) count)
         {
