@@ -87,9 +87,9 @@ namespace Minerva.Module.Tasks
         /// </summary>
         /// <param name="seconds"></param>
         /// <returns></returns>
-        public static Task WaitForUpdate()
+        public static System.Runtime.CompilerServices.YieldAwaitable WaitForUpdate()
         {
-            return Task.Delay(TimeSpan.FromMilliseconds(1));
+            return Task.Yield();
         }
     }
 }
