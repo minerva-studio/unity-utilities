@@ -17,7 +17,7 @@ namespace Minerva.Module.Editor
 
         protected override void DrawField(Rect position, SerializedProperty property, GUIContent label, bool conditionMatches)
         {
-            if (conditionMatches) EditorGUI.PropertyField(position, property, label, true);
+            if (conditionMatches) DrawDefault(position, property, label);// EditorGUI.PropertyField(position, property, label, true);
         }
     }
 }

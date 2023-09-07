@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -77,13 +78,7 @@ namespace Minerva.Module.Editor
             label.tooltip += $"Cannot found the path {attr.path} or it is not a boolean";
             try
             {
-                //ScriptAttributeUtility
-                //PropertyHandler
-                var type = Type.GetType("ScriptAttributeUtility");
-                var method = type.GetMethod("GetHandler", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-                object handler = method.Invoke(null, new object[] { property });
-                var OnGUIMethod = handler.GetType().GetMethod("OnGUI", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                OnGUIMethod.Invoke(handler, new object[] { position, property, null, true });
+                DrawDefault(position, property, label);
             }
             catch (ExitGUIException) { throw; }
             catch (Exception e)
@@ -92,6 +87,11 @@ namespace Minerva.Module.Editor
                 EditorGUI.PropertyField(position, property, label, true);
             }
 
+        }
+
+        protected static void DrawDefault(Rect position, SerializedProperty property, GUIContent label)
+        {
+            EditorFieldDrawers.DrawDefaultField(position, property, label);
         }
 
         protected abstract float GetFieldHeight(SerializedProperty property, GUIContent label, bool conditionMatches);
