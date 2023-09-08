@@ -15,8 +15,6 @@ namespace Minerva.Module.Editor
     /// </summary>
     public static partial class EditorFieldDrawers
     {
-        private static MethodInfo getPropertyMethod;
-
         /// <summary>
         /// Draw field by <paramref name="field"/>, with label <paramref name="labelName"/>
         /// </summary>
@@ -399,23 +397,6 @@ namespace Minerva.Module.Editor
 
 
 
-
-        public static void DrawDefaultField(Rect position, SerializedProperty property, GUIContent label)
-        {
-            if (getPropertyMethod == null)
-            {
-                var type = typeof(EditorGUILayout).Assembly.GetTypes().FirstOrDefault(t => t.Name == "ScriptAttributeUtility");
-                getPropertyMethod = type.GetMethod("GetHandler", BindingFlags.Static | BindingFlags.NonPublic);
-            }
-            object handler = getPropertyMethod.Invoke(null, new object[] { property });
-            //Debug.Log(handler);
-            var OnGUIMethod = handler.GetType().GetMethod("OnGUI", BindingFlags.Public | BindingFlags.Instance);
-            OnGUIMethod.Invoke(handler, new object[] { position, property, label, true });
-        }
-
-
-
-
         /// <summary>
         /// Create a right click menu for last GUI Rect
         /// </summary>
@@ -454,6 +435,38 @@ namespace Minerva.Module.Editor
             baseColor = GUI.backgroundColor;
             GUI.backgroundColor = color;
             return colorStyle;
+        }
+
+
+
+
+
+        public static void PropertyField(Rect position, SerializedProperty property, GUIContent label, bool includeChildren = false)
+        {
+            var drawer = PropertyDrawerFinder.FindDrawerForProperty(property);
+            if (drawer == null || drawer.GetType() == typeof(PropertyDrawer))
+            {
+                EditorGUI.PropertyField(position, property, label, includeChildren);
+            }
+            else
+            {
+#pragma warning disable UNT0027 // Do not call PropertyDrawer.OnGUI()
+                drawer.OnGUI(position, property, label);
+#pragma warning restore UNT0027 // Do not call PropertyDrawer.OnGUI()
+            }
+        }
+
+        public static float GetPropertyHeight(SerializedProperty property, GUIContent label, bool includeChildren = true)
+        {
+            var drawer = PropertyDrawerFinder.FindDrawerForProperty(property);
+            if (drawer == null || drawer.GetType() == typeof(PropertyDrawer))
+            {
+                return EditorGUI.GetPropertyHeight(property, label, includeChildren);
+            }
+            else
+            {
+                return drawer.GetPropertyHeight(property, label);
+            }
         }
     }
 }

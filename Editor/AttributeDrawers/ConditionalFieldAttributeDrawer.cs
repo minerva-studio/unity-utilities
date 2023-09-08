@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+
 
 namespace Minerva.Module.Editor
 {
@@ -18,15 +18,22 @@ namespace Minerva.Module.Editor
                 bool matches = value is null || attr.EqualsAny(value);
                 return GetFieldHeight(property, label, matches);
             }
-            catch
+            catch (ExitGUIException) { throw; }
+            catch (Exception e)
             {
+                Debug.LogException(e);
                 return GetBasePropertyHeight(property, label);
             };
         }
 
-        protected float GetBasePropertyHeight(SerializedProperty property, GUIContent label)
+        protected static float GetBasePropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUI.GetPropertyHeight(property, label);
+            return EditorFieldDrawers.GetPropertyHeight(property, label);
+        }
+
+        protected static void DrawDefault(Rect position, SerializedProperty property, GUIContent label)
+        {
+            EditorFieldDrawers.PropertyField(position, property, label);
         }
 
         private object GetValue(SerializedProperty property, ConditionalFieldAttribute attr)
@@ -87,11 +94,6 @@ namespace Minerva.Module.Editor
                 EditorGUI.PropertyField(position, property, label, true);
             }
 
-        }
-
-        protected static void DrawDefault(Rect position, SerializedProperty property, GUIContent label)
-        {
-            EditorFieldDrawers.DrawDefaultField(position, property, label);
         }
 
         protected abstract float GetFieldHeight(SerializedProperty property, GUIContent label, bool conditionMatches);

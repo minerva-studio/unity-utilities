@@ -9,9 +9,7 @@ namespace Minerva.Module.Editor
 {
     /// <summary>
     /// Provide simple value get/set methods for SerializedProperty.  Can be used with
-    /// any data types and with arbitrarily deeply-pathed properties.
-    /// <br/>
-    /// 该死，我也不记得我从哪里摸来的代码了，如果这些代码需要维护的话那就寄了
+    /// any data types and with arbitrarily deeply-pathed properties. 
     /// </summary>
     public static class SerializedPropertyExtensions
     {
@@ -87,6 +85,11 @@ namespace Minerva.Module.Editor
         {
             public string propertyName;
             public int elementIndex;
+
+            public override string ToString()
+            {
+                return propertyName ?? elementIndex.ToString();
+            }
         }
 
         static Regex arrayElementRegex = new Regex(@"\GArray\.data\[(\d+)\]", RegexOptions.Compiled);
@@ -167,13 +170,7 @@ namespace Minerva.Module.Editor
             if (container == null)
                 return null;
             var type = container.GetType();
-            var members = type.GetMember(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            for (int i = 0; i < members.Length; ++i)
-            {
-                if (members[i] is FieldInfo or PropertyInfo)
-                    return members[i];
-            }
-            return null;
+            return GetInfo(type, name);
         }
 
         static object GetMemberValue(object container, string name)
@@ -181,37 +178,47 @@ namespace Minerva.Module.Editor
             if (container == null)
                 return null;
             var type = container.GetType();
-            var members = type.GetMember(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            for (int i = 0; i < members.Length; ++i)
-            {
-                if (Attribute.IsDefined(members[i], typeof(ObsoleteAttribute))) continue;
+            var member = GetInfo(type, name);//, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
 
-                if (members[i] is FieldInfo field)
-                    return field.GetValue(container);
-                else if (members[i] is PropertyInfo property)
-                    return property.GetValue(container);
-            }
+            if (Attribute.IsDefined(member, typeof(ObsoleteAttribute))) return null;
+            if (member is FieldInfo field) return field.GetValue(container);
+            if (member is PropertyInfo property) return property.GetValue(container);
             return null;
         }
 
         static void SetMemberValue(object container, string name, object value)
         {
             var type = container.GetType();
-            var members = type.GetMember(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            for (int i = 0; i < members.Length; ++i)
+            var member = GetInfo(type, name);//, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+                                             //var members = type.GetMember(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+            if (member is FieldInfo field)
             {
-                if (members[i] is FieldInfo field)
-                {
-                    field.SetValue(container, value);
-                    return;
-                }
-                else if (members[i] is PropertyInfo property)
-                {
-                    property.SetValue(container, value);
-                    return;
-                }
+                field.SetValue(container, value);
+                return;
+            }
+            if (member is PropertyInfo property)
+            {
+                property.SetValue(container, value);
+                return;
             }
             Debug.Assert(false, $"Failed to set member {container}.{name} via reflection");
+        }
+
+        static MemberInfo GetInfo(Type parentType, string name)
+        {
+            FieldInfo fieldInfo = parentType.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            if (fieldInfo != null)
+            {
+                return fieldInfo;
+            }
+            PropertyInfo propertyInfo = parentType.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            if (propertyInfo != null)
+            {
+                return propertyInfo;
+            }
+            if (parentType.BaseType != typeof(object) && parentType.BaseType != null)
+                return GetInfo(parentType.BaseType, name);
+            return null;
         }
     }
 }

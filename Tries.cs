@@ -8,7 +8,7 @@ namespace Minerva.Module
     public class Tries<TValue> : ITries<TValue>, IEnumerable<KeyValuePair<string, TValue>>, IEnumerable, IDictionary<string, TValue>
     {
         readonly char separator = '.';
-        Node root;
+        Section root;
 
         public TValue this[string key]
         {
@@ -17,29 +17,46 @@ namespace Minerva.Module
         }
 
 
-        private class Node
+        public class Section
         {
-            public Dictionary<string, Node> children;
+            public Dictionary<string, Section> children;
             public TValue value;
             public int count;
             public bool isTerminated;
 
-            public Node()
+            public Section()
             {
-                children = new Dictionary<string, Node>();
+                children = new Dictionary<string, Section>();
             }
 
-            public Node(TValue value) : this()
+            public Section(TValue value) : this()
             {
                 this.value = value;
                 isTerminated = true;
             }
 
+            public Section Clone()
+            {
+                Section node = new()
+                {
+                    value = value,
+                    count = count,
+                    isTerminated = isTerminated,
+                    children = new()
+                };
+
+                foreach (var item in node.children)
+                {
+                    node.children[item.Key] = item.Value.Clone();
+                }
+
+                return node;
+            }
         }
 
         public Tries()
         {
-            root = new Node();
+            root = new Section();
         }
 
         public Tries(char separator) : this()
@@ -64,14 +81,14 @@ namespace Minerva.Module
         }
 
 
-        private Tries(Node root)
+        private Tries(Section root)
         {
             this.root = root;
         }
 
         public int Count => root.count;
 
-        public List<string> FirstLevelKeys => root.children.Keys.ToList();
+        public Dictionary<string, Section>.KeyCollection FirstLevelKeys => root.children.Keys;
 
         public List<string> Keys
         {
@@ -108,7 +125,7 @@ namespace Minerva.Module
 
             string[] prefix = s.Split(separator);
 
-            Node currentNode = root;
+            Section currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
             {
                 string key = prefix[i];
@@ -121,7 +138,7 @@ namespace Minerva.Module
                 //current path does not exist, create nodes to create the path
                 else
                 {
-                    Node newNode = new Node();
+                    Section newNode = new Section();
                     currentNode.children.Add(prefix[i], newNode);
                     currentNode = newNode;
                 }
@@ -139,7 +156,7 @@ namespace Minerva.Module
         public bool ContainsKey(string s)
         {
             string[] prefix = s.Split(separator);
-            Node currentNode = root;
+            Section currentNode = root;
 
             for (int i = 0; i < prefix.Length; i++)
             {
@@ -165,12 +182,12 @@ namespace Minerva.Module
 
             string[] prefix = s.Split(separator);
 
-            Node currentNode = root;
+            Section currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
             {
                 string key = prefix[i];
                 currentNode.count--;
-                Node childNode = currentNode.children[key];
+                Section childNode = currentNode.children[key];
                 if (childNode.count == 1)
                 {
                     currentNode.children.Remove(key);
@@ -186,7 +203,7 @@ namespace Minerva.Module
         {
             string[] prefix = s.Split(separator);
 
-            Node currentNode = root;
+            Section currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
             {
                 string key = prefix[i];
@@ -212,7 +229,7 @@ namespace Minerva.Module
         public TValue Get(string s)
         {
             string[] prefix = s.Split(separator);
-            Node currentNode = GetNode(prefix);
+            Section currentNode = GetNode(prefix);
             if (!currentNode.isTerminated)
             {
                 throw new KeyNotFoundException();
@@ -223,7 +240,7 @@ namespace Minerva.Module
         {
             string[] prefix = s.Split(separator);
 
-            Node currentNode = root;
+            Section currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
             {
                 string key = prefix[i];
@@ -236,7 +253,7 @@ namespace Minerva.Module
                 //current path does not exist, create nodes to create the path
                 else
                 {
-                    Node newNode = new Node();
+                    Section newNode = new Section();
                     currentNode.children.Add(prefix[i], newNode);
                     currentNode = newNode;
                 }
@@ -247,8 +264,12 @@ namespace Minerva.Module
 
         public Tries<TValue> GetSubTrie(string s)
         {
+            if (string.IsNullOrEmpty(s))
+            {
+                return new Tries<TValue>(root);
+            }
             string[] prefix = s.Split(separator);
-            Node currentNode = GetNode(prefix);
+            Section currentNode = GetNode(prefix);
             if (currentNode == null)
             {
                 throw new ArgumentException();
@@ -275,9 +296,13 @@ namespace Minerva.Module
             return root.children.Keys.ToList();
         }
 
-        private Node GetNode(string[] prefix)
+        private Section GetNode(string[] prefix)
         {
-            Node currentNode = root;
+            Section currentNode = root;
+            if (prefix.Length == 0)
+            {
+                return currentNode;
+            }
             for (int i = 0; i < prefix.Length; i++)
             {
                 string key = prefix[i];
@@ -294,11 +319,11 @@ namespace Minerva.Module
             return currentNode;
         }
 
-        private void GetValues(List<TValue> list, Node node)
+        private void GetValues(List<TValue> list, Section node)
         {
             foreach (var item in node.children)
             {
-                Node child = item.Value;
+                Section child = item.Value;
                 if (child.isTerminated)
                 {
                     list.Add(child.value);
@@ -307,11 +332,11 @@ namespace Minerva.Module
             }
         }
 
-        private void GetKeys(List<string> list, Node node, string prefix)
+        private void GetKeys(List<string> list, Section node, string prefix)
         {
             foreach (var item in node.children)
             {
-                Node child = item.Value;
+                Section child = item.Value;
                 string conbinedKey = prefix + item.Key;
                 if (child.isTerminated)
                 {
@@ -321,11 +346,11 @@ namespace Minerva.Module
             }
         }
 
-        private void GetKeyValuePairs(List<KeyValuePair<string, TValue>> list, Node node, string prefix = "")
+        private void GetKeyValuePairs(List<KeyValuePair<string, TValue>> list, Section node, string prefix = "")
         {
             foreach (var item in node.children)
             {
-                Node child = item.Value;
+                Section child = item.Value;
                 string conbinedKey = prefix + item.Key;
                 if (child.isTerminated)
                 {
@@ -359,7 +384,7 @@ namespace Minerva.Module
 
         public void Clear()
         {
-            root = new Node();
+            root = new Section();
         }
         public void Clear(string key)
         {
@@ -382,6 +407,11 @@ namespace Minerva.Module
         public bool Remove(KeyValuePair<string, TValue> item)
         {
             return Contains(item) && ((IDictionary<string, TValue>)this).Remove(item.Key);
+        }
+
+        public Tries<TValue> Clone()
+        {
+            return new Tries<TValue>(root.Clone());
         }
     }
 
