@@ -33,7 +33,7 @@ namespace Minerva.Module.Editor
 
         protected static void DrawDefault(Rect position, SerializedProperty property, GUIContent label)
         {
-            EditorFieldDrawers.PropertyField(position, property, label);
+            EditorFieldDrawers.PropertyField(position, property, label, true);
         }
 
         private object GetValue(SerializedProperty property, ConditionalFieldAttribute attr)

@@ -32,7 +32,7 @@ namespace Minerva.Module
     /// interface that connect to a monobehaviour directly
     /// <br> note: an class/struct of <see cref="IMonoBehaviour"/> doesn't have to be a subclass of <see cref="MonoBehaviour"/> </br>
     /// </summary>
-    public interface IMonoBehaviour<T> : IMonoBehaviour where T : MonoBehaviour
+    public interface IMonoBehaviour<out T> : IMonoBehaviour where T : MonoBehaviour
     {
         public new T Script => this as T;
     }

@@ -15,7 +15,7 @@ namespace Minerva.Module.Editor
         {
             object value = property.GetValue();
             if (value is string str) EditorGUI.LabelField(position, label.text, str);
-            else { EditorFieldDrawers.PropertyField(position, property, label); }
+            else { EditorFieldDrawers.PropertyField(position, property, label, true); }
         }
     }
 

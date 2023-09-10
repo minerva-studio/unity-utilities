@@ -17,12 +17,12 @@ namespace Minerva.Module.Editor
             {
                 var prev = GUI.enabled;
                 GUI.enabled = false;
-                EditorFieldDrawers.PropertyField(position, property, label);
+                EditorFieldDrawers.PropertyField(position, property, label, true);
                 GUI.enabled = prev;
             }
             else
             {
-                EditorFieldDrawers.PropertyField(position, property, label);
+                EditorFieldDrawers.PropertyField(position, property, label, true);
             }
         }
     }

@@ -15,7 +15,7 @@ namespace Minerva.Module.Editor
         {
             if (Application.isPlaying)
             {
-                EditorFieldDrawers.PropertyField(position, property, label);
+                EditorFieldDrawers.PropertyField(position, property, label, true);
             }
         }
     }
