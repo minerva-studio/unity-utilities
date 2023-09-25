@@ -25,7 +25,7 @@ namespace Minerva.Module
         {
             this.path = path;
             this.result = result;
-            this.expectValues = expectValues;
+            this.expectValues = expectValues ?? Array.Empty<object>();
         }
 
         /// <summary>
@@ -41,9 +41,9 @@ namespace Minerva.Module
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public virtual bool EqualsAny(object value)
+        public bool Matches(object value)
         {
-            return expectValues.Any(expect => MatchWithExpect(value, expect));
+            return expectValues.Any(expect => MatchWithExpect(value, expect)) == result;
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Minerva.Module
                 foreach (var attr in attrs)
                 {
                     string dependent = attr.path;
-                    if (attr.EqualsAny(type.GetField(dependent).GetValue(obj)) != attr.result)
+                    if (!attr.Matches(type.GetField(dependent).GetValue(obj)))
                     {
                         return false;
                     }
@@ -82,11 +82,19 @@ namespace Minerva.Module
                 }
             }
 
-            if (double.TryParse(expect.ToString(), out var a) && double.TryParse(value.ToString(), out var b))
+            if (value is UnityEngine.Object obj && expect is bool b)
             {
-                return a == b;
+                return ((bool)obj) == b;
             }
-            if (expect is IComparable) return value is IComparable c && Comparer.Default.Compare(c, expect) == 0;
+            if (double.TryParse(expect.ToString(), out var da) && double.TryParse(value.ToString(), out var db))
+            {
+                return da == db;
+            }
+            if (expect is IComparable)
+            {
+                return value is IComparable c && Comparer.Default.Compare(c, expect) == 0;
+            }
+
             return value.Equals(expect);
         }
     }

@@ -15,7 +15,7 @@ namespace Minerva.Module.Editor
                 object value = GetValue(property, attr);
 
                 //something not match
-                bool matches = value is null || attr.EqualsAny(value);
+                bool matches = value == null || (attr.Matches(value));
                 return GetFieldHeight(property, label, matches);
             }
             catch (ExitGUIException) { throw; }
@@ -63,7 +63,9 @@ namespace Minerva.Module.Editor
                     if (value is null) Debug.LogWarning("value found is " + value);
                     return;
                 }
-                DrawField(position, property, label, attr.EqualsAny(value) == attr.result);
+                //something not match
+                bool matches = attr.Matches(value);
+                DrawField(position, property, label, matches);
             }
             catch (ExitGUIException)
             {
