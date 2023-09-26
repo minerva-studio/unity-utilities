@@ -160,18 +160,6 @@ namespace Minerva.Module.WeightedRandom
             return WeightNode(weightables, WeightSum(weightables));
         }
 
-        /// <summary>
-        /// Get a weighted node
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="weightables"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public static T PopWeightNode<T>(this IList<T> weightables) where T : IWeightable
-        {
-            return PopWeightNode(weightables, WeightSum(weightables));
-        }
-
         internal static T WeightNode<T>(this IList<T> weightables, int sum) where T : IWeightable
         {
             if (sum == 0)
@@ -201,12 +189,34 @@ namespace Minerva.Module.WeightedRandom
 
 
 
+        /// <summary>
+        /// Get a weighted node
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static T PopWeightNode<T>(this IList<T> weightables) where T : IWeightable
+        {
+            return PopWeightNode(weightables, WeightSum(weightables));
+        }
+
+        /// <summary>
+        /// Pop given weight from the list
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <param name="sum"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
         internal static T PopWeightNode<T>(this IList<T> weightables, int sum) where T : IWeightable
         {
             if (weightables.Count == 0) return default;
             if (sum == 0)
             {
-                T weightable = weightables[UnityEngine.Random.Range(0, weightables.Count)];
+                int i = UnityEngine.Random.Range(0, weightables.Count);
+                T weightable = weightables[i];
+                weightables.RemoveAt(i);
                 return weightable;
             }
 
@@ -214,6 +224,14 @@ namespace Minerva.Module.WeightedRandom
             return PopWeightNodePos(weightables, sum, position);
         }
 
+        /// <summary>
+        /// Pop given weight from the list
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <param name="sum"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
         internal static T PopWeightNodePos<T>(this IList<T> weightables, int sum, int position) where T : IWeightable
         {
             int currentTotal = 0;
@@ -263,6 +281,10 @@ namespace Minerva.Module.WeightedRandom
             }
             return sum;
         }
+
+
+
+
 
 
         /// <summary>

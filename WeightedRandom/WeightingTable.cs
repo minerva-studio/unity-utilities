@@ -36,13 +36,16 @@ namespace Minerva.Module.WeightedRandom
 
         public IWeightable<T> PopWeightNode()
         {
-            IWeightable<T> weightable = nodes.PopWeightNode(sum);
-            sum -= weightable.Weight;
-            return weightable;
+            return PopWeightNode(UnityEngine.Random.Range(0, sum));
         }
 
         public IWeightable<T> PopWeightNode(int position)
         {
+            if (nodes.Count == 0)
+            {
+                return null;
+            }
+
             IWeightable<T> weightable = nodes.PopWeightNodePos(sum, position);
             sum -= weightable.Weight;
             return weightable;
