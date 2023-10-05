@@ -7,15 +7,6 @@ namespace Minerva.Module
 {
     public class Trie : IEnumerable<string>, IEnumerable, ICollection<string>
     {
-        readonly char separator = '.';
-        Node root;
-
-        public bool this[string key]
-        {
-            get { return Contains(key); }
-            set { Set(key, value); }
-        }
-
         private class Node
         {
             public Dictionary<string, Node> children;
@@ -31,7 +22,52 @@ namespace Minerva.Module
             {
                 this.isTerminated = isTerminated;
             }
+
+
+            public Node Clone()
+            {
+                Node node = new()
+                {
+                    count = count,
+                    isTerminated = isTerminated,
+                    children = new()
+                };
+
+                foreach (var item in node.children)
+                {
+                    node.children[item.Key] = item.Value.Clone();
+                }
+
+                return node;
+            }
         }
+
+
+
+        readonly char separator = '.';
+        Node root;
+
+        public bool this[string key]
+        {
+            get { return Contains(key); }
+            set { Set(key, value); }
+        }
+
+        public int Count => root.count;
+
+        public ICollection<string> FirstLevelKeys => root.children.Keys.ToList();
+
+        public List<string> Keys
+        {
+            get
+            {
+                List<string> array = new List<string>();
+                GetKeys(array, root, "");
+                return array;
+            }
+        }
+
+        public bool IsReadOnly => false;
 
         public Trie()
         {
@@ -59,28 +95,10 @@ namespace Minerva.Module
             }
         }
 
-
-        private Trie(Node root)
+        private Trie(Node root, char separator) : this(separator)
         {
             this.root = root;
         }
-
-        public int Count => root.count;
-
-        public ICollection<string> FirstLevelKeys => root.children.Keys.ToList();
-
-        public List<string> Keys
-        {
-            get
-            {
-                List<string> array = new List<string>();
-                GetKeys(array, root, "");
-                return array;
-            }
-        }
-
-
-        public bool IsReadOnly => false;
 
 
         void ICollection<string>.Add(string item) => Add(item);
@@ -138,28 +156,24 @@ namespace Minerva.Module
 
         public bool Remove(string s)
         {
-            if (!Contains(s))
-            {
-                return false;
-            }
-
             string[] prefix = GetPrefix(s);
-
             Node currentNode = root;
+            List<Node> stack = new List<Node>();
             for (int i = 0; i < prefix.Length; i++)
             {
                 string key = prefix[i];
-                currentNode.count--;
+                if (!currentNode.children.ContainsKey(key)) return false;
                 Node childNode = currentNode.children[key];
-                if (childNode.count == 1)
-                {
-                    currentNode.children.Remove(key);
-                }
+                stack.Add(currentNode);
                 currentNode = childNode;
-
             }
 
-            return currentNode != null;
+            currentNode.isTerminated = false;
+            foreach (var item in stack)
+            {
+                item.count--;
+            }
+            return true;
         }
 
         public bool Set(string s, bool value)
@@ -176,21 +190,24 @@ namespace Minerva.Module
 
         public Trie GetSubTrie(string s)
         {
+            if (string.IsNullOrEmpty(s))
+            {
+                return new Trie(root, separator);
+            }
             string[] prefix = GetPrefix(s);
             Node currentNode = GetNode(prefix);
-            return currentNode == null ? throw new ArgumentException() : new Trie(currentNode);
+            return currentNode == null ? throw new ArgumentException() : new Trie(currentNode, separator);
         }
 
         public bool TryGetSubTrie(string s, out Trie trie)
         {
             string[] prefix = GetPrefix(s);
-            bool result = TryGetNode(prefix, out Node currentNode);
-            if (!result)
+            if (!TryGetNode(prefix, out Node currentNode))
             {
                 trie = null;
                 return false;
             }
-            trie = new Trie(currentNode);
+            trie = new Trie(currentNode, separator);
             return true;
         }
 
@@ -275,6 +292,11 @@ namespace Minerva.Module
             var list = new List<string>();
             GetKeys(list, root);
             Array.Copy(list.ToArray(), 0, array, arrayIndex, list.Count);
+        }
+
+        public Trie Clone()
+        {
+            return new Trie(root.Clone(), separator);
         }
     }
 }
