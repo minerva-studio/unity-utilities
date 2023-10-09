@@ -27,7 +27,7 @@ namespace Minerva.Module.Tasks
                 else
                 {
                     // Retry after a short delay
-                    await Task.Delay(TimeSpan.FromSeconds(Time.deltaTime));
+                    await Task.Yield();
                     CheckPredicate();
                 }
             }
@@ -49,7 +49,7 @@ namespace Minerva.Module.Tasks
                 if (predicate())
                 {
                     // Retry after a short delay
-                    await Task.Delay(TimeSpan.FromSeconds(Time.deltaTime));
+                    await Task.Yield();
                     CheckPredicate();
                 }
                 else
