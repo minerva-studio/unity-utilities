@@ -16,6 +16,9 @@ namespace Minerva.Module.Editor
         /// (Extension) Get the value of the serialized property.
         public static object GetValue(this SerializedProperty property)
         {
+            if (property == null) return null;
+            if (!property.isArray) return property.boxedValue;
+
             string propertyPath = property.propertyPath;
             object value = property.serializedObject.targetObject;
             int i = 0;
@@ -92,6 +95,7 @@ namespace Minerva.Module.Editor
             }
         }
 
+        private const BindingFlags MEMBER_BINDING = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance;
         static Regex arrayElementRegex = new Regex(@"\GArray\.data\[(\d+)\]", RegexOptions.Compiled);
 
         // Parse the next path component from a SerializedProperty.propertyPath.  For simple field/property access,
@@ -178,8 +182,13 @@ namespace Minerva.Module.Editor
             if (container == null)
                 return null;
             var type = container.GetType();
-            var member = GetInfo(type, name);//, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+            var member = GetInfo(type, name);
 
+            if (member == null)
+            {
+                //Debug.LogFormat("Error when looking for member {0}", name);
+                return null;
+            }
             if (Attribute.IsDefined(member, typeof(ObsoleteAttribute))) return null;
             if (member is FieldInfo field) return field.GetValue(container);
             if (member is PropertyInfo property) return property.GetValue(container);
@@ -206,12 +215,12 @@ namespace Minerva.Module.Editor
 
         static MemberInfo GetInfo(Type parentType, string name)
         {
-            FieldInfo fieldInfo = parentType.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            FieldInfo fieldInfo = parentType.GetField(name, MEMBER_BINDING);
             if (fieldInfo != null)
             {
                 return fieldInfo;
             }
-            PropertyInfo propertyInfo = parentType.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            PropertyInfo propertyInfo = parentType.GetProperty(name, MEMBER_BINDING);
             if (propertyInfo != null)
             {
                 return propertyInfo;
