@@ -56,13 +56,13 @@ namespace Minerva.Module.Editor
             try
             {
                 object value = GetValue(property, attr);
-                if (value is null)
-                {
-                    label.text += " (default mode)";
-                    label.tooltip += $"Cannot found the path {attr.path} or it is not a boolean";
-                    if (value is null) Debug.LogWarning("value found is " + value);
-                    return;
-                }
+                //if (value is null)
+                //{
+                //    label.text += " (default mode)";
+                //    label.tooltip += $"Cannot found the path {attr.path} or it is not a boolean";
+                //    if (value is null) Debug.LogWarning("value found is " + value);
+                //    return;
+                //}
                 //something not match
                 bool matches = attr.Matches(value);
                 DrawField(position, property, label, matches);

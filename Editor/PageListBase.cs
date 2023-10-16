@@ -57,18 +57,20 @@ namespace Minerva.Module.Editor
             private void DrawPageScroll()
             {
                 GUILayout.BeginHorizontal();
-                var state = GUI.enabled;
-                GUI.enabled = page > 1;
-                if (GUILayout.Button("Last", GUILayout.MaxWidth(80))) page--;
-                GUI.enabled = state;
-                EditorGUILayout.LabelField("Page", GUILayout.MaxWidth(30));
-                if (MaxPage != 0) page = EditorGUILayout.IntSlider(page, 1, MaxPage);
-                else EditorGUILayout.LabelField("-");
-                GUILayout.Label($"of {MaxPage}", GUILayout.MaxWidth(40));
-                page = Mathf.Max(Mathf.Min(MaxPage, page), 1);
-                GUI.enabled = page <= MaxPage;
-                if (GUILayout.Button("Next", GUILayout.MaxWidth(80))) page++;
-                GUI.enabled = state;
+                using (new GUIEnable(page > 1))
+                    if (GUILayout.Button("Last", GUILayout.MaxWidth(80))) page--;
+
+                using (new GUIEnable())
+                {
+                    EditorGUILayout.LabelField("Page", GUILayout.MaxWidth(30));
+                    if (MaxPage != 0) page = EditorGUILayout.IntSlider(page, 1, MaxPage);
+                    else EditorGUILayout.LabelField("-");
+                    GUILayout.Label($"of {MaxPage}", GUILayout.MaxWidth(40));
+                    page = Mathf.Max(Mathf.Min(MaxPage, page), 1);
+                }
+
+                using (new GUIEnable(page <= MaxPage))
+                    if (GUILayout.Button("Next", GUILayout.MaxWidth(80))) page++;
 
                 GUILayout.EndHorizontal();
             }
