@@ -20,16 +20,13 @@ namespace Minerva.Module.Tasks
 
             async void CheckPredicate()
             {
-                if (predicate())
-                {
-                    tcs.SetResult(true);
-                }
-                else
+                while (!predicate())
                 {
                     // Retry after a short delay
                     await Task.Yield();
-                    CheckPredicate();
                 }
+                tcs.SetResult(true);
+
             }
             CheckPredicate();
             return tcs.Task;
@@ -46,16 +43,13 @@ namespace Minerva.Module.Tasks
 
             async void CheckPredicate()
             {
-                if (predicate())
+                while (predicate())
                 {
                     // Retry after a short delay
                     await Task.Yield();
-                    CheckPredicate();
                 }
-                else
-                {
-                    tcs.SetResult(true);
-                }
+                tcs.SetResult(true);
+
             }
             CheckPredicate();
             return tcs.Task;
@@ -76,20 +70,14 @@ namespace Minerva.Module.Tasks
         /// </summary>
         /// <param name="seconds"></param>
         /// <returns></returns>
-        public static Task WaitForSeconds(float seconds)
+        public static async Task WaitForSeconds(float seconds)
         {
-            var ending = Time.time + seconds;
-            return WaitUntil(() => ending <= Time.time);
-        }
-
-        /// <summary>
-        /// Similar to <see cref="null"/>
-        /// </summary>
-        /// <param name="seconds"></param>
-        /// <returns></returns>
-        public static System.Runtime.CompilerServices.YieldAwaitable WaitForUpdate()
-        {
-            return Task.Yield();
+            float current = 0;
+            while (current < seconds)
+            {
+                current += Time.deltaTime;
+                await Task.Yield();
+            }
         }
     }
 }

@@ -22,6 +22,10 @@ namespace Minerva.Module.Editor
             GUI.enabled = lastState;
         }
 
+        public static GUIEnable By(bool v)
+        {
+            return new GUIEnable(v);
+        }
 
         public void Dispose()
         {
