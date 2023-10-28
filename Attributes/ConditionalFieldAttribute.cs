@@ -92,7 +92,7 @@ namespace Minerva.Module
             }
             if (expect is IComparable)
             {
-                return value is IComparable c && Comparer.Default.Compare(c, expect) == 0;
+                return value is IComparable c && expect.GetType() == value.GetType() && Comparer.Default.Compare(c, expect) == 0;
             }
 
             return value.Equals(expect);

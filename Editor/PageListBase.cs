@@ -32,7 +32,7 @@ namespace Minerva.Module.Editor
                 {
                     page += Event.current.delta.y > 0 ? 1 : -1;
                     page = Mathf.Min(MaxPage, Mathf.Max(0, page));
-                    EditorWindow.focusedWindow.Repaint();
+                    if (EditorWindow.focusedWindow) EditorWindow.focusedWindow.Repaint();
                     return;
                 }
 
