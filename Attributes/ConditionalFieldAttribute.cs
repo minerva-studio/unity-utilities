@@ -72,15 +72,32 @@ namespace Minerva.Module
 
         private static bool MatchWithExpect(object value, object expect)
         {
-            if (expect is Enum e1 && expect.GetType() == value.GetType() && GetCustomAttribute(expect.GetType(), typeof(FlagsAttribute)) != null)
+            do
             {
-                //Debug.Log(value);
-                //Debug.Log(e1);
-                if (((Enum)value).HasFlag(e1))
+                if (expect is not Enum or int && value is not Enum or int)
                 {
-                    return true;
+                    continue;
+                }
+
+                int intExpect = Convert.ToInt32(expect);
+                int intValue = Convert.ToInt32(value);
+                // non flag
+                if (GetCustomAttribute(expect.GetType(), typeof(FlagsAttribute)) == null)
+                {
+                    if (intExpect == intValue)
+                        return true;
+                }
+                //flag
+                else
+                {
+                    if ((intExpect & intValue) != 0)
+                    {
+                        return true;
+                    }
                 }
             }
+            while (false);
+
 
             if (value is UnityEngine.Object obj && expect is bool b)
             {

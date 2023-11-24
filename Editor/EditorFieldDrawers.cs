@@ -444,7 +444,7 @@ namespace Minerva.Module.Editor
         public static void PropertyField(Rect position, SerializedProperty property, GUIContent label, bool includeChildren = false)
         {
             var drawer = PropertyDrawerFinder.FindDrawerForProperty(property);
-            if (drawer == null || drawer.GetType() == typeof(PropertyDrawer))
+            if (drawer == null || drawer.GetType() == typeof(PropertyDrawer) || drawer.GetType().IsSubclassOf(typeof(PropertyDrawer)))
             {
                 EditorGUI.PropertyField(position, property, label, includeChildren);
             }
