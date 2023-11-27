@@ -1,16 +1,17 @@
-﻿//using Microsoft.CSharp;
-using System.CodeDom.Compiler;
+﻿using System.CodeDom.Compiler;
 using System.Text;
 using System;
 using UnityEditor;
 using UnityEngine;
-using System.Reflection;
+using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using NUnit.Framework;
+using System.Linq;
 
 namespace Minerva.Module.Editor
 {
     /// <summary>
-    /// 字符串编译成DLL载入，只在编辑器中使用
-    /// <see cref="https://blog.51cto.com/u_15069479/4170067"/>
+    /// Compile C# string to actual executable
     /// </summary>
     public class DynamicCodeWindow : EditorWindow
     {
@@ -35,8 +36,12 @@ namespace Minerva.Module.Editor
                 return _instance;
             }
         }
+
+
         private bool isUseTextAsAllContent;
         private string content = @"Debug.Log(""Hello"");";
+
+
         private void OnGUI()
         {
             isUseTextAsAllContent = EditorGUILayout.ToggleLeft("完全使用文本作为编译内容（手动添加using等）", isUseTextAsAllContent);
@@ -74,10 +79,8 @@ public class DynamicCode {
 
         private static void Run(string code, bool isUseTextAsAllContent)
         {
-            ColorDebug("[DynamicCode] Start......");
             string codetmp = code;
             Helper.ExcuteDynamicCode(codetmp, isUseTextAsAllContent);
-            ColorDebug("[DynamicCode] End......");
         }
 
         public static void ColorDebug(string content)
@@ -103,39 +106,40 @@ public class DynamicCode {
             }
         }
 
-        private CompilerParameters _compileParams;
-        private CompilerParameters CompileParams
-        {
-            get
-            {
-                Debug.Log(Application.dataPath);
-                if (_compileParams == null)
-                {
-                    DynamicCodeWindow.ColorDebug("[DynamicCode] Create CompilerParameters");
-                    _compileParams = new CompilerParameters();
-                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                    {
-                        if (assembly.IsDynamic)
-                        {
-                            continue;
-                        }
+        //private CompilerParameters _compileParams;
+        //private CompilerParameters CompileParams
+        //{
+        //    get
+        //    {
+        //        Debug.Log(Application.dataPath);
+        //        if (_compileParams == null)
+        //        {
+        //            DynamicCodeWindow.ColorDebug("[DynamicCode] Create CompilerParameters");
+        //            _compileParams = new CompilerParameters();
+        //            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        //            {
+        //                if (assembly.IsDynamic)
+        //                {
+        //                    continue;
+        //                }
 
-                        string cash_d = assembly.Location;
-                        if (!cash_d.Contains("mscorlib.dll"))
-                        {
-                            _compileParams.ReferencedAssemblies.Add(assembly.Location);
-                        }
-                    }
-                    _compileParams.GenerateExecutable = false;
-                    _compileParams.GenerateInMemory = true;
-                }
-                _compileParams.OutputAssembly = DynamicCodeWindow.OUTPUT_DLL_DIR + "/DynamicCodeTemp" + Time.realtimeSinceStartup + ".dll";
-                return _compileParams;
-            }
-        }
+        //                string cash_d = assembly.Location;
+        //                if (!cash_d.Contains("mscorlib.dll"))
+        //                {
+        //                    _compileParams.ReferencedAssemblies.Add(assembly.Location);
+        //                }
+        //            }
+        //            _compileParams.GenerateExecutable = false;
+        //            _compileParams.GenerateInMemory = true;
+        //        }
+        //        _compileParams.OutputAssembly = DynamicCodeWindow.OUTPUT_DLL_DIR + "/DynamicCodeTemp" + Time.realtimeSinceStartup + ".dll";
+        //        return _compileParams;
+        //    }
+        //}
 
         public void ExcuteDynamicCode(string codeStr, bool isUseTextAsAllContent)
         {
+
             if (codeStr == null) codeStr = "";
             string generatedCode;
             if (isUseTextAsAllContent)
@@ -146,30 +150,23 @@ public class DynamicCode {
             {
                 generatedCode = GenerateCode(codeStr);
             }
-            Debug.Log("[DynamicCode] Compile Start: " + generatedCode);
-            CompilerResults compileResults = Provider.CompileAssemblyFromSource(CompileParams, generatedCode);
-            if (compileResults.Errors.Count != 0) Debug.Log("[DynamicCode] Error Count: " + compileResults.Errors.Count);
-            if (compileResults.Errors.HasErrors)
+
+            try
             {
-                Debug.LogError("[DynamicCode] 编译错误！");
-                var msg = new StringBuilder();
-                foreach (CompilerError error in compileResults.Errors)
-                {
-                    //Debug.Log(error);
-                    msg.AppendFormat("Error ({0}): {1}\n",
-                        error.ErrorNumber, error.ErrorText);
-                }
-                throw new Exception(msg.ToString());
+                ScriptState<object> result = CSharpScript.RunAsync(generatedCode, SetDefaultImport()).Result;
+                Debug.Log(result.ToString());
             }
-            // 通过反射，调用DynamicCode的实例
-            //AppDomain a = AppDomain.CreateDomain(AppDomain.CurrentDomain.FriendlyName);
-            Assembly objAssembly = compileResults.CompiledAssembly;
-            DynamicCodeWindow.ColorDebug("[DynamicCode] Gen Dll FullName: " + objAssembly.FullName);
-            DynamicCodeWindow.ColorDebug("[DynamicCode] Gen Dll Location: " + objAssembly.Location);
-            DynamicCodeWindow.ColorDebug("[DynamicCode] PathToAssembly: " + compileResults.PathToAssembly);
-            object objDynamicCode = objAssembly.CreateInstance("DynamicCode");
-            MethodInfo objMI = objDynamicCode.GetType().GetMethod("CodeExecute");
-            objMI.Invoke(objDynamicCode, null);
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
+
+        static ScriptOptions SetDefaultImport()
+        {
+            return ScriptOptions.Default.AddReferences(
+                    AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic)
+                );
         }
 
         private string GenerateCode(string methodCode)
