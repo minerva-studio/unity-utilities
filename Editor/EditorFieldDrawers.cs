@@ -29,7 +29,23 @@ namespace Minerva.Module.Editor
         /// <param name="label"> label fo the field </param>
         /// <param name="field"> the field info </param>
         /// <param name="target"> the instance </param>
-        public static void DrawField(GUIContent label, FieldInfo field, object target)
+        public static void DrawField(GUIContent label, FieldInfo field, object target) => DrawField(null, label, field, target);
+
+        /// <summary>
+        /// Draw field by <paramref name="field"/>, with label <paramref name="label"/> and undo record for <paramref name="objectToUndo"/>
+        /// </summary>
+        /// <param name="labelName"> label fo the field </param>
+        /// <param name="field"> the field info </param>
+        /// <param name="target"> the instance </param>
+        public static void DrawField(UnityEngine.Object objectToUndo, string labelName, FieldInfo field, object target) => DrawField(objectToUndo, new GUIContent(labelName), field, target);
+
+        /// <summary>
+        /// Draw field by <paramref name="field"/>, with label <paramref name="label"/> and undo record for <paramref name="objectToUndo"/>
+        /// </summary>
+        /// <param name="label"> label fo the field </param>
+        /// <param name="field"> the field info </param>
+        /// <param name="target"> the instance </param>
+        public static void DrawField(UnityEngine.Object objectToUndo, GUIContent label, FieldInfo field, object target)
         {
             if (field is null)
             {
@@ -45,10 +61,23 @@ namespace Minerva.Module.Editor
             object oldValue = field.GetValue(target);
             if (field.FieldType == typeof(string) && oldValue == null) oldValue = string.Empty;
             object value = DrawField(label, oldValue, field.FieldType);
-            if (value is not null) field.SetValue(target, value);
+
+            if (value is not null)
+            {
+                if (objectToUndo)
+                {
+                    Undo.RecordObject(objectToUndo, $"Change value of {field.Name} from {oldValue} to {value}");
+                }
+                field.SetValue(target, value);
+            }
         }
 
 
+
+
+
+
+
         /// <summary>
         /// Draw given value
         /// </summary>
@@ -57,7 +86,7 @@ namespace Minerva.Module.Editor
         /// <param name="isReadOnly"></param>
         /// <param name="displayUnsupportInfo"> if the field type is not supported, draw not supported message in editor</param>
         /// <returns> new value if changed, old if no change </returns>
-        public static object DrawField(string labelName, object value, bool isReadOnly, bool displayUnsupportInfo = true) => DrawField(new GUIContent(labelName), value, isReadOnly, displayUnsupportInfo);
+        public static object DrawField(string labelName, object value, bool isReadOnly = false, bool displayUnsupportInfo = true) => DrawField(new GUIContent(labelName), value, isReadOnly, displayUnsupportInfo);
         /// <summary>
         /// Draw given value
         /// </summary>
@@ -66,19 +95,71 @@ namespace Minerva.Module.Editor
         /// <param name="isReadOnly"></param>
         /// <param name="displayUnsupportInfo"> if the field type is not supported, draw not supported message in editor</param>
         /// <returns> new value if changed, old if no change </returns>
-        public static object DrawField(GUIContent label, object value, bool isReadOnly, bool displayUnsupportInfo = true)
+        public static object DrawField(GUIContent label, object value, bool isReadOnly = false, bool displayUnsupportInfo = true)
+        {
+            object result = value;
+            DrawField(label, ref result, isReadOnly, displayUnsupportInfo);
+            return result;
+        }
+
+
+
+        ///// <summary>
+        ///// Draw given value
+        ///// </summary>
+        ///// <param name="label"></param>
+        ///// <param name="location"></param>
+        ///// <param name="isReadOnly"></param>
+        ///// <param name="displayUnsupportInfo"> if the field type is not supported, draw not supported message in editor</param>
+        ///// <returns> new value if changed, old if no change </returns>
+        //public static bool DrawField(ref object location, GUIContent label, bool isReadOnly, bool displayUnsupportInfo = true)
+        //{
+        //    return DrawField(ref location, label, isReadOnly, displayUnsupportInfo, null, null);
+        //}
+
+        ///// <summary>
+        ///// Draw given value
+        ///// </summary>
+        ///// <param name="labelName"></param>
+        ///// <param name="location"></param>
+        ///// <param name="isReadOnly"></param>
+        ///// <param name="displayUnsupportInfo"> if the field type is not supported, draw not supported message in editor</param>
+        ///// <returns> new value if changed, old if no change </returns>
+        //public static bool DrawField(ref object location, string labelName, bool isReadOnly, bool displayUnsupportInfo = true)
+        //{
+        //    return DrawField(ref location, new GUIContent(labelName), isReadOnly, displayUnsupportInfo);
+        //}
+
+        /// <summary>
+        /// Draw given value
+        /// </summary>
+        /// <param name="labelName"></param>
+        /// <param name="location"></param>
+        /// <param name="isReadOnly"></param>
+        /// <param name="displayUnsupportInfo"> if the field type is not supported, draw not supported message in editor</param>
+        /// <returns> new value if changed, old if no change </returns>
+        public static bool DrawField(string labelName, ref object location, bool isReadOnly = false, bool displayUnsupportInfo = true, UnityEngine.Object objectToUndo = null, string path = null) => DrawField(new GUIContent(labelName), ref location, isReadOnly, displayUnsupportInfo, objectToUndo, path);
+        /// <summary>
+        /// Draw given value
+        /// </summary>
+        /// <param name="GUIContent"></param>
+        /// <param name="value"></param>
+        /// <param name="isReadOnly"></param>
+        /// <param name="displayUnsupportInfo"> if the field type is not supported, draw not supported message in editor</param>
+        /// <returns> new value if changed, old if no change </returns>
+        public static bool DrawField(GUIContent label, ref object location, bool isReadOnly = false, bool displayUnsupportInfo = true, UnityEngine.Object objectToUndo = null, string path = null)
         {
             var GUIState = GUI.enabled;
             if (isReadOnly)
             {
                 GUI.enabled = false;
             }
-            var ret = DrawField(label, value, value?.GetType(), displayUnsupportInfo);
+            var ret = DrawField(label, location, location?.GetType(), displayUnsupportInfo);
             if (isReadOnly)
             {
                 GUI.enabled = GUIState;
             }
-            return ret;
+            return SetOnChange(ref location, ret, objectToUndo, path);
         }
 
 
@@ -135,6 +216,10 @@ namespace Minerva.Module.Editor
             {
                 return EditorGUILayout.Vector3IntField(label, v3i);
             }
+            else if (value is Vector4 v4)
+            {
+                return EditorGUILayout.Vector4Field(label, v4);
+            }
             else if (value is UUID uUID)
             {
                 EditorGUILayout.LabelField(label, uUID.Value);
@@ -164,6 +249,10 @@ namespace Minerva.Module.Editor
             {
                 return DrawRangeField(label, r);
             }
+            else if (value is LayerMask lm)
+            {
+                return DrawLayerMask(label, lm);
+            }
             else if (type is null)
             {
                 EditorGUILayout.LabelField(label.text, "null");
@@ -190,8 +279,16 @@ namespace Minerva.Module.Editor
             }
             else if (type == typeof(IList) || type?.GetInterfaces().Any(t => t == typeof(IList)) == true)
             {
-                var itemType = type.GenericTypeArguments[0];
-                DrawList(label, value as IList, itemType);
+                var list = value as IList;
+                Type itemType = null;
+                if (list.Count > 0)
+                {
+                    itemType = list[0]?.GetType();
+                }
+                if (itemType == null && type.GenericTypeArguments.Length > 0) itemType = type.GenericTypeArguments[0];
+                if (itemType != null)
+                    DrawList(label, value as IList, itemType);
+                else if (displayUnsupportInfo) EditorGUILayout.LabelField(label.text, $"({type?.Name ?? "[Unknown]"})");
             }
             else if (displayUnsupportInfo) EditorGUILayout.LabelField(label.text, $"({type?.Name ?? "[Unknown]"})");
             return value;
@@ -207,11 +304,44 @@ namespace Minerva.Module.Editor
         public static bool IsSupported(object value)
         {
             if (value == null) return false;
-            if (value is string or int or float or double or bool or Vector2 or Vector2Int or Vector3 or Vector3Int or UUID or Enum or UnityEngine.Object or RangeInt)
+            if (value is string or int or float or double or bool or Vector2 or Vector2Int or Vector3 or Vector3Int or UUID or Color or Vector4 or Enum or UnityEngine.Object or RangeInt)
                 return true;
             else if (value is IList && value.GetType().IsGenericType)
                 return true;
             return false;
+        }
+
+
+
+
+        public static void RecordUndo(UnityEngine.Object objectToUndo, string path, object oldValue, object newValue)
+        {
+            Undo.RecordObject(objectToUndo, $"Modify {path} from {oldValue} to {newValue}");
+        }
+
+
+
+
+
+        public static bool SetOnChange(ref object location, object newValue, UnityEngine.Object objectToUndo = null, string path = null)
+        {
+            if (location == null && newValue == null) return false;
+            if (location.Equals(newValue)) return false;
+            if (objectToUndo) RecordUndo(objectToUndo, path, location, newValue);
+            location = newValue;
+            return true;
+        }
+
+
+
+
+
+
+        public static LayerMask DrawLayerMask(string labelName, LayerMask value) => DrawLayerMask(new GUIContent(labelName), value);
+        public static LayerMask DrawLayerMask(GUIContent label, LayerMask lm)
+        {
+            string[] layers = System.Linq.Enumerable.Range(0, 31).Select(index => LayerMask.LayerToName(index)).Where(l => !string.IsNullOrEmpty(l)).ToArray();
+            return new LayerMask { value = EditorGUILayout.MaskField(label, lm.value, layers) };
         }
 
 
@@ -229,11 +359,19 @@ namespace Minerva.Module.Editor
             return ret;
         }
 
-        public static ReorderableList DrawList(string labelName, IList list, Type type, ElementCallbackDelegate elementDrawer = null) => DrawList(new GUIContent(labelName), list, type, elementDrawer);
-        public static ReorderableList DrawList(GUIContent label, IList list, Type type, ElementCallbackDelegate elementDrawer = null)
+        public static ReorderableList DrawList(string labelName, IList list, Type type, ElementCallbackDelegate elementDrawer = null, UnityEngine.Object objectToUndo = null) => DrawList(new GUIContent(labelName), list, type, elementDrawer, objectToUndo);
+        public static ReorderableList DrawList(GUIContent label, IList list, Type type, ElementCallbackDelegate elementDrawer = null, UnityEngine.Object objectToUndo = null)
         {
             ReorderableList r = new(list, type, true, true, true, true);
-            ElementCallbackDelegate drawer = elementDrawer ?? new ElementCallbackDelegate((rect, index, isActive, isFocused) => { DrawField(index.ToString(), list[index], list[index]?.GetType()); });
+            ElementCallbackDelegate drawer = elementDrawer ?? new ElementCallbackDelegate((rect, index, isActive, isFocused) =>
+            {
+                var newItem = DrawField(index.ToString(), list[index], list[index]?.GetType());
+                if (newItem != list[index])
+                {
+                    RecordUndo(objectToUndo, "", list[index], newItem);
+                    list[index] = newItem;
+                }
+            });
             r.elementHeight = EditorGUIUtility.singleLineHeight;
             r.drawElementCallback += drawer;
             r.onAddCallback += (r) => r.list.Add(Activator.CreateInstance(type));
@@ -255,10 +393,6 @@ namespace Minerva.Module.Editor
         {
             return new GenericListPageList<T>(list, draw);
         }
-
-
-
-
 
 
 
@@ -301,6 +435,38 @@ namespace Minerva.Module.Editor
             baseColor = GUI.backgroundColor;
             GUI.backgroundColor = color;
             return colorStyle;
+        }
+
+
+
+
+
+        public static void PropertyField(Rect position, SerializedProperty property, GUIContent label, bool includeChildren = false)
+        {
+            var drawer = PropertyDrawerFinder.FindDrawerForProperty(property);
+            if (drawer == null || drawer.GetType() == typeof(PropertyDrawer) || drawer.GetType().IsSubclassOf(typeof(PropertyDrawer)))
+            {
+                EditorGUI.PropertyField(position, property, label, includeChildren);
+            }
+            else
+            {
+#pragma warning disable UNT0027 // Do not call PropertyDrawer.OnGUI()
+                drawer.OnGUI(position, property, label);
+#pragma warning restore UNT0027 // Do not call PropertyDrawer.OnGUI()
+            }
+        }
+
+        public static float GetPropertyHeight(SerializedProperty property, GUIContent label, bool includeChildren = true)
+        {
+            var drawer = PropertyDrawerFinder.FindDrawerForProperty(property);
+            if (drawer == null || drawer.GetType() == typeof(PropertyDrawer))
+            {
+                return EditorGUI.GetPropertyHeight(property, label, includeChildren);
+            }
+            else
+            {
+                return drawer.GetPropertyHeight(property, label);
+            }
         }
     }
 }

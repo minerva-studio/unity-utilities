@@ -22,7 +22,7 @@ namespace Minerva.Module.Editor
 
         protected override float GetFieldHeight(SerializedProperty property, GUIContent label, bool conditionMatches)
         {
-            return base.GetBasePropertyHeight(property, label);
+            return GetBasePropertyHeight(property, label);
         }
     }
 }

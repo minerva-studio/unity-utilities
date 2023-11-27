@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
+
 namespace Minerva.Module.Editor
 {
     public abstract class ConditionalFieldAttributeDrawer : PropertyDrawer
@@ -14,18 +15,25 @@ namespace Minerva.Module.Editor
                 object value = GetValue(property, attr);
 
                 //something not match
-                bool matches = value is null || attr.EqualsAny(value);
+                bool matches = value == null || (attr.Matches(value));
                 return GetFieldHeight(property, label, matches);
             }
-            catch
+            catch (ExitGUIException) { throw; }
+            catch (Exception e)
             {
+                Debug.LogException(e);
                 return GetBasePropertyHeight(property, label);
             };
         }
 
-        protected float GetBasePropertyHeight(SerializedProperty property, GUIContent label)
+        protected static float GetBasePropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUI.GetPropertyHeight(property, label);
+            return EditorFieldDrawers.GetPropertyHeight(property, label);
+        }
+
+        protected static void DrawDefault(Rect position, SerializedProperty property, GUIContent label)
+        {
+            EditorFieldDrawers.PropertyField(position, property, label, true);
         }
 
         private object GetValue(SerializedProperty property, ConditionalFieldAttribute attr)
@@ -48,14 +56,16 @@ namespace Minerva.Module.Editor
             try
             {
                 object value = GetValue(property, attr);
-                if (value is null)
-                {
-                    label.text += " (default mode)";
-                    label.tooltip += $"Cannot found the path {attr.path} or it is not a boolean";
-                    if (value is null) Debug.LogWarning("value found is " + value);
-                    return;
-                }
-                DrawField(position, property, label, attr.EqualsAny(value) == attr.result);
+                //if (value is null)
+                //{
+                //    label.text += " (default mode)";
+                //    label.tooltip += $"Cannot found the path {attr.path} or it is not a boolean";
+                //    if (value is null) Debug.LogWarning("value found is " + value);
+                //    return;
+                //}
+                //something not match
+                bool matches = attr.Matches(value);
+                DrawField(position, property, label, matches);
             }
             catch (ExitGUIException)
             {
@@ -77,13 +87,7 @@ namespace Minerva.Module.Editor
             label.tooltip += $"Cannot found the path {attr.path} or it is not a boolean";
             try
             {
-                //ScriptAttributeUtility
-                //PropertyHandler
-                var type = Type.GetType("ScriptAttributeUtility");
-                var method = type.GetMethod("GetHandler", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-                object handler = method.Invoke(null, new object[] { property });
-                var OnGUIMethod = handler.GetType().GetMethod("OnGUI", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                OnGUIMethod.Invoke(handler, new object[] { position, property, null, true });
+                DrawDefault(position, property, label);
             }
             catch (ExitGUIException) { throw; }
             catch (Exception e)

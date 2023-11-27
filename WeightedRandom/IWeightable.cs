@@ -22,5 +22,4 @@
     {
         new T Item { get; }
     }
-
 }

@@ -62,13 +62,17 @@ namespace Minerva.Module.WeightedRandom
             return items(item);
         }
 
+
+
+
+
         /// <summary>
         /// return a random item from the list, distributed by the weight given
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="weightables"></param>
         /// <returns></returns> 
-        public static T Weight<T>(this IList<IWeightable<T>> weightables, int seed) => weightables.WeightNode(seed).Item;
+        public static T Weight<T>(this IList<IWeightable<T>> weightables, UnityEngine.Random.State seed) => weightables.WeightNode(seed).Item;
 
         /// <summary>
         /// return a random item from the list, distributed by the weight given
@@ -77,6 +81,17 @@ namespace Minerva.Module.WeightedRandom
         /// <param name="weightables"></param>
         /// <returns></returns> 
         public static T Weight<T>(this IList<IWeightable<T>> weightables) => weightables.WeightNode().Item;
+
+        /// <summary>
+        /// return a random item from the list, distributed by the weight given
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <returns></returns> 
+        public static T WeightPos<T>(this IList<IWeightable<T>> weightables, int r) => weightables.WeightNodePos(r).Item;
+
+
+
 
         /// <summary>
         /// return a random item from the list, distributed by the weight given
@@ -112,10 +127,10 @@ namespace Minerva.Module.WeightedRandom
         /// <param name="seed"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public static T WeightNode<T>(this IList<T> weightables, int seed) where T : IWeightable
+        public static T WeightNode<T>(this IList<T> weightables, UnityEngine.Random.State seed) where T : IWeightable
         {
             var state = UnityEngine.Random.state;
-            UnityEngine.Random.InitState(seed);
+            UnityEngine.Random.state = seed;
             var result = weightables.WeightNode();
             UnityEngine.Random.state = state;
             return result;
@@ -128,40 +143,147 @@ namespace Minerva.Module.WeightedRandom
         /// <param name="weightables"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
+        public static T WeightNodePos<T>(this IList<T> weightables, int pos) where T : IWeightable
+        {
+            return WeightNodePos(weightables, WeightSum(weightables), pos);
+        }
+
+        /// <summary>
+        /// Get a weighted node
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public static T WeightNode<T>(this IList<T> weightables) where T : IWeightable
         {
-            if (weightables == null)
+            return WeightNode(weightables, WeightSum(weightables));
+        }
+
+        internal static T WeightNode<T>(this IList<T> weightables, int sum) where T : IWeightable
+        {
+            if (sum == 0)
             {
-                throw new ArgumentNullException("The list of weightables is null");
+                if (weightables.Count == 0) return default;
+                T weightable = weightables[UnityEngine.Random.Range(0, weightables.Count)];
+                return weightable;
             }
 
-            if (weightables.Count == 0)
+            int position = UnityEngine.Random.Range(0, sum);
+            return WeightNodePos(weightables, sum, position);
+        }
+
+        public static T WeightNodePos<T>(IList<T> weightables, int sum, int position) where T : IWeightable
+        {
+            int currentTotal = 0;
+            for (int i = 0; currentTotal < sum && i < weightables.Count; i++)
             {
-                return default;
+                currentTotal += weightables[i].Weight;
+                if (currentTotal > position) return weightables[i];
+            }
+            // last item
+            return weightables[^1];
+        }
+
+
+
+
+
+        /// <summary>
+        /// Get a weighted node
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static T PopWeightNode<T>(this IList<T> weightables) where T : IWeightable
+        {
+            return PopWeightNode(weightables, WeightSum(weightables));
+        }
+
+        /// <summary>
+        /// Pop given weight from the list
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <param name="sum"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        internal static T PopWeightNode<T>(this IList<T> weightables, int sum) where T : IWeightable
+        {
+            if (weightables.Count == 0) return default;
+            if (sum == 0)
+            {
+                int i = UnityEngine.Random.Range(0, weightables.Count);
+                T weightable = weightables[i];
+                weightables.RemoveAt(i);
+                return weightable;
             }
 
-            int totalWeight = weightables.Sum(w => w.Weight);
-            if (totalWeight == 0)
-            {
-                T weightable = weightables.RandomGet();
-                return weightable != null ? weightable : default;
-            }
+            int position = UnityEngine.Random.Range(0, sum);
+            return PopWeightNodePos(weightables, sum, position);
+        }
 
-            var currentTotal = 0;
-            var position = UnityEngine.Random.Range(0, totalWeight);
-            T item = default;
-            for (int i = 0; currentTotal < totalWeight && i < weightables.Count; i++)
+        /// <summary>
+        /// Pop given weight from the list
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <param name="sum"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        internal static T PopWeightNodePos<T>(this IList<T> weightables, int sum, int position) where T : IWeightable
+        {
+            int currentTotal = 0;
+            for (int i = 0; currentTotal < sum && i < weightables.Count; i++)
             {
-                var weightItem = weightables[i];
-                currentTotal += weightItem.Weight;
-                item = weightItem;
+                currentTotal += weightables[i].Weight;
                 if (currentTotal > position)
                 {
-                    return weightItem;
+                    T t = weightables[i];
+                    weightables.RemoveAt(i);
+                    return t;
                 }
             }
-            return item;
+            T t1 = weightables[^1];
+            weightables.RemoveAt(weightables.Count - 1);
+            // last item
+            return t1;
         }
+
+
+
+
+
+
+        public static int WeightSum<T>(this IList<T> weightables) where T : IWeightable
+        {
+            int sum = 0;
+            for (int i = 0; i < weightables.Count; i++)
+            {
+                sum += weightables[i].Weight;
+            }
+            return sum;
+        }
+
+        /// <summary>
+        /// get the sum of the weightable list
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="weightables"></param>
+        /// <returns></returns>
+        public static int WeightSum<T>(this IList<IWeightable<T>> weightables)
+        {
+            int sum = 0;
+            for (int i = 0; i < weightables.Count; i++)
+            {
+                sum += weightables[i].Weight;
+            }
+            return sum;
+        }
+
+
+
 
 
 
@@ -197,28 +319,5 @@ namespace Minerva.Module.WeightedRandom
         {
             return weightables.Select(w => w.Item).ToList();
         }
-
-        /// <summary>
-        /// get the sum of the weightable list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="weightables"></param>
-        /// <returns></returns>
-        public static int Sum<T>(this IList<IWeightable<T>> weightables)
-        {
-            return weightables.Sum(w => w.Weight);
-        }
-
-        /// <summary>
-        /// get the sum of the weightable list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="weightables"></param>
-        /// <returns></returns>
-        public static int Sum<T>(this IList<T> weightables) where T : IWeightable
-        {
-            return weightables.Sum(w => w.Weight);
-        }
     }
-
 }

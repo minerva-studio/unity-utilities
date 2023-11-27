@@ -25,7 +25,7 @@ namespace Minerva.Module
         {
             this.path = path;
             this.result = result;
-            this.expectValues = expectValues;
+            this.expectValues = expectValues ?? Array.Empty<object>();
         }
 
         /// <summary>
@@ -41,9 +41,9 @@ namespace Minerva.Module
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public virtual bool EqualsAny(object value)
+        public bool Matches(object value)
         {
-            return expectValues.Any(expect => MatchWithExpect(value, expect));
+            return expectValues.Any(expect => MatchWithExpect(value, expect)) == result;
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Minerva.Module
                 foreach (var attr in attrs)
                 {
                     string dependent = attr.path;
-                    if (attr.EqualsAny(type.GetField(dependent).GetValue(obj)) != attr.result)
+                    if (!attr.Matches(type.GetField(dependent).GetValue(obj)))
                     {
                         return false;
                     }
@@ -72,21 +72,46 @@ namespace Minerva.Module
 
         private static bool MatchWithExpect(object value, object expect)
         {
-            if (expect is Enum e1 && expect.GetType() == value.GetType() && GetCustomAttribute(expect.GetType(), typeof(FlagsAttribute)) != null)
+            do
             {
-                //Debug.Log(value);
-                //Debug.Log(e1);
-                if (((Enum)value).HasFlag(e1))
+                if (expect is not Enum or int && value is not Enum or int)
                 {
-                    return true;
+                    continue;
+                }
+
+                int intExpect = Convert.ToInt32(expect);
+                int intValue = Convert.ToInt32(value);
+                // non flag
+                if (GetCustomAttribute(expect.GetType(), typeof(FlagsAttribute)) == null)
+                {
+                    if (intExpect == intValue)
+                        return true;
+                }
+                //flag
+                else
+                {
+                    if ((intExpect & intValue) != 0)
+                    {
+                        return true;
+                    }
                 }
             }
+            while (false);
 
-            if (double.TryParse(expect.ToString(), out var a) && double.TryParse(value.ToString(), out var b))
+
+            if (value is UnityEngine.Object obj && expect is bool b)
             {
-                return a == b;
+                return ((bool)obj) == b;
             }
-            if (expect is IComparable) return value is IComparable c && Comparer.Default.Compare(c, expect) == 0;
+            if (double.TryParse(expect.ToString(), out var da) && double.TryParse(value.ToString(), out var db))
+            {
+                return da == db;
+            }
+            if (expect is IComparable)
+            {
+                return value is IComparable c && expect.GetType() == value.GetType() && Comparer.Default.Compare(c, expect) == 0;
+            }
+
             return value.Equals(expect);
         }
     }

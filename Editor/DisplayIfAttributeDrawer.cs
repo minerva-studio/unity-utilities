@@ -12,12 +12,12 @@ namespace Minerva.Module.Editor
             {
                 return GetBasePropertyHeight(property, label);
             }
-            else return -EditorGUIUtility.standardVerticalSpacing; // if the property is hinding, return the negative of standard vertical spacing
+            else return 0;// -EditorGUIUtility.standardVerticalSpacing; // if the property is hinding, return the negative of standard vertical spacing
         }
 
         protected override void DrawField(Rect position, SerializedProperty property, GUIContent label, bool conditionMatches)
         {
-            if (conditionMatches) EditorGUI.PropertyField(position, property, label, true);
+            if (conditionMatches) DrawDefault(position, property, label);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Minerva.Module.WeightedRandom
 {
@@ -26,7 +27,7 @@ namespace Minerva.Module.WeightedRandom
     /// </summary>
     /// <typeparam name="T"></typeparam>
     [Serializable]
-    public struct Weight<T> : IWeightable<T>
+    public struct Weight<T> : IWeightable<T>, IEquatable<Weight<T>>
     {
         public T item;
         public int weight;
@@ -39,6 +40,27 @@ namespace Minerva.Module.WeightedRandom
         {
             this.item = item;
             this.weight = weight;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Weight<T> weight && Equals(weight);
+        }
+
+        public readonly bool Equals(Weight<T> weight)
+        {
+            return EqualityComparer<T>.Default.Equals(item, weight.item)
+                && this.weight == weight.weight;
+        }
+
+        public static bool operator ==(Weight<T> left, Weight<T> right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Weight<T> left, Weight<T> right)
+        {
+            return !(left == right);
         }
     }
 }

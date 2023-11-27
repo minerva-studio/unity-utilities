@@ -1,25 +1,157 @@
 ﻿using System.Collections.Generic;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Text;
-using static UnityEngine.EventSystems.EventTrigger;
 using UnityEditor;
-using UnityEngine;
-using Table = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
+using System;
 
 namespace Minerva.Module
 {
-    public class CSVFile
+    public interface IRow : IEnumerable<string>
     {
-        public Table table;
-        public List<string> cols;
-        public List<string> rows;
+        string this[string col] { get; set; }
+        string Name { get; }
+        int Count { get; }
+
+        public static IRow Of(string name, Dictionary<string, string> value)
+        {
+            return new Row(name, value);
+        }
+
+
+        struct Row : IRow
+        {
+            string key;
+            Dictionary<string, string> value;
+
+            public Row(KeyValuePair<string, Dictionary<string, string>> item)
+            {
+                this.key = item.Key;
+                this.value = item.Value;
+            }
+
+            public Row(string Key, Dictionary<string, string> Value)
+            {
+                this.key = Key;
+                this.value = Value;
+            }
+
+            public string this[string col] { get => value[col]; set => this.value[col] = value; }
+
+            public string Name => key;
+
+            public int Count => value.Count;
+
+            public IEnumerator<string> GetEnumerator()
+            {
+                return value.Values.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return value.Values.GetEnumerator();
+            }
+        }
+    }
+
+    public interface ITable : IEnumerable, IEnumerable<IRow>
+    {
+        string this[string row, string col] { get; set; }
+        IRow this[string row] { get; }
+        int Count { get; }
+        string[] ColumnNames { get; }
+        string[] RowNames { get; }
+
+
+        IRow GetOrCreateRow(string rowName);
+
+
+        public static Dictionary<string, Dictionary<string, string>> ToDictionaries(ITable table)
+        {
+            var @this = table;
+            Dictionary<string, Dictionary<string, string>> res = new Dictionary<string, Dictionary<string, string>>();
+            foreach (var rowName in @this.RowNames)
+            {
+                Dictionary<string, string> t = new();
+                res.Add(rowName, t);
+                var row = @this[rowName];
+                foreach (var colName in @this.ColumnNames)
+                {
+                    t.Add(colName, row[colName]);
+                }
+            }
+
+            return res;
+        }
+
+        public static void Convert<TSource, TTarget>(TSource sourceTable, TTarget target) where TSource : ITable where TTarget : ITable
+        {
+            foreach (var rowName in sourceTable.RowNames)
+            {
+                IRow targetRow = target.GetOrCreateRow(rowName);
+                IRow sourceRow = sourceTable[rowName];
+                foreach (var colName in sourceTable.ColumnNames)
+                {
+                    targetRow[colName] = sourceRow[colName];
+                }
+            }
+        }
+
+        public static TTarget Convert<TSource, TTarget>(TSource sourceTable) where TSource : ITable where TTarget : ITable, new()
+        {
+            var target = new TTarget();
+            Convert(sourceTable, target);
+            return target;
+        }
+    }
+
+    public class CSVFile : ITable
+    {
+        public Dictionary<string, Dictionary<string, string>> table;
+        public string[] cols;
+        public string[] rows;
 
         public CSVFile()
         {
             table = new();
-            cols = new();
-            rows = new();
+            cols = Array.Empty<string>();
+            rows = Array.Empty<string>();
+        }
+
+        public IRow this[string row] => throw new System.NotImplementedException();
+
+        public string this[string row, string col] { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
+
+        public int Count => table.Count;
+
+        public string[] ColumnNames => cols;
+
+        public string[] RowNames => rows;
+
+        public IRow GetOrCreateRow(string rowName)
+        {
+            if (table.TryGetValue(rowName, out var value))
+                return IRow.Of(rowName, value);
+
+            Array.Resize(ref rows, rows.Length + 1);
+            rows[^1] = rowName;
+            value = new Dictionary<string, string>();
+            table.Add(rowName, value);
+            return IRow.Of(rowName, value);
+        }
+
+        public IEnumerator<IRow> GetEnumerator()
+        {
+            foreach (var item in table)
+            {
+                yield return IRow.Of(item.Key, item.Value);
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 
@@ -30,23 +162,23 @@ namespace Minerva.Module
     {
         private const char CSV_SEPARATOR = ',';
 
-        public static string ConvertToCSV(string name, Table table)
+        public static string ConvertToCSV(string name, ITable table)
         {
             StringBuilder sb = new(name);
             sb.Append(CSV_SEPARATOR);
-            sb.Append(string.Join(CSV_SEPARATOR, table.FirstOrDefault().Value.Keys));
+            sb.Append(string.Join(CSV_SEPARATOR, table.ColumnNames));
             sb.Append('\n');
 
             foreach (var item in table)
             {
-                sb.Append(item.Key);
+                sb.Append(item.Name);
                 sb.Append(CSV_SEPARATOR);
                 var entries = string.Join(
                     CSV_SEPARATOR,
-                    item.Value.Select(
-                        text => !text.Value.Contains("\"") && !text.Value.Contains(",")
-                        ? text.Value
-                        : $"\"{text.Value.Replace("\"", "\"\"")}\""
+                    item.Select(
+                        text => !text.Contains("\"") && !text.Contains(",")
+                        ? text
+                        : $"\"{text.Replace("\"", "\"\"")}\""
                         )
                 );
                 sb.Append(entries);
@@ -62,15 +194,15 @@ namespace Minerva.Module
             var file = new CSVFile();
             var entries = new Queue<string>(input.Split('\n'));
 
-            file.cols = entries.Dequeue().Split(CSV_SEPARATOR).ToList();
-            file.cols.RemoveAt(0);
+            file.cols = entries.Dequeue().Split(CSV_SEPARATOR)[1..].ToArray();
+            var rows = new List<string>();
 
             while (entries.Count != 0)
             {
                 var entry = entries.Dequeue();
                 if (string.IsNullOrEmpty(entry) || string.IsNullOrWhiteSpace(entry)) continue;
                 List<string> words = GetWords(entry);
-                while (file.cols.Count > words.Count - 1)
+                while (file.cols.Length > words.Count - 1)
                 {
                     words.Add(string.Empty);
                     //Debug.LogError(file.cols.Count);
@@ -82,16 +214,17 @@ namespace Minerva.Module
                     //throw new InvalidDataException();
                 }
                 string row = words[0];
-                file.rows.Add(row);
-                words.RemoveAt(0);
+                rows.Add(row);
 
+                words.RemoveAt(0);
                 var dict = new Dictionary<string, string>();
-                for (int i = 0; i < file.cols.Count; i++)
+                for (int i = 0; i < file.cols.Length; i++)
                 {
                     dict.Add(file.cols[i], words[i]);
                 }
                 file.table.Add(row, dict);
             }
+            file.rows = rows.ToArray();
             return file;
         }
 
