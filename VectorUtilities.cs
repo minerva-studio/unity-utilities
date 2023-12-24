@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Author : Wendi Cai
-/// </summary>
 namespace Minerva.Module
 {
     /// <summary>
-    /// a utility class for more vector support
+    /// a utility class for more vector support 
+    /// Author : Wendi Cai 
     /// </summary>
     public static class VectorUtilities
     {

@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityObject = UnityEngine.Object;
 
 namespace Minerva.Module
 {
     /// <summary>
-    /// A semaphore like structure for the game to control game pause etc.
+    /// A semaphore like structure for the game to count something.
     /// </summary>
     [Serializable]
     public class Counter : ICounter<UnityObject>
@@ -99,7 +97,7 @@ namespace Minerva.Module
 
 
     /// <summary>
-    /// A semaphore like structure for the game to control game pause etc.
+    /// A semaphore like structure for the game to count something.
     /// </summary>
     [Serializable]
     public class Counter<T> : ICounter<T>

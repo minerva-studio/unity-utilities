@@ -9,33 +9,6 @@ namespace Minerva.Module
     public static class Enumerable
     {
         /// <summary>
-        /// return a list with items of the same reference but in a different list instance
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="ts"></param>
-        /// <returns></returns>
-        public static IEnumerable<T> ShallowClone<T>(this IEnumerable<T> ts)
-        {
-            if (ts is null) throw new ArgumentNullException();
-            if (ts.Count() == 0) return Array.Empty<T>();
-            T[] clone = ts.ToArray();
-            return clone;
-        }
-        /// <summary>
-        /// return a list with items of the same reference but in a different list instance
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="ts"></param>
-        /// <returns></returns>
-        public static List<T> ShallowCloneToList<T>(this IEnumerable<T> ts)
-        {
-            if (ts is null) throw new ArgumentNullException();
-
-            List<T> newList = new List<T>(ts);
-            return newList;
-        }
-
-        /// <summary>
         /// return a list with a cloned items and in a different list instance
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -45,9 +18,9 @@ namespace Minerva.Module
         {
             if (list is null) throw new ArgumentNullException();
 
-            T[] clone = list.Select(s => (T)s.Clone()).ToArray();
-            return clone;
+            return list.Select(s => (T)s.Clone());
         }
+
         /// <summary>
         /// return a list with a cloned items and in a different list instance
         /// </summary>
@@ -145,7 +118,7 @@ namespace Minerva.Module
         /// <typeparam name="T"></typeparam>
         /// <param name="ts"></param>
         /// <returns></returns>
-        public static List<T> StructClone<T>(this IEnumerable<T> ts) where T : struct
+        public static List<T> ValueClone<T>(this IEnumerable<T> ts) where T : struct
         {
             if (ts is null)
             {
@@ -159,6 +132,41 @@ namespace Minerva.Module
             return newList;
         }
 
+        public static IEnumerable<(int, int)> Range((int x, int y) start, (int x, int y) count)
+        {
+            int xMax = start.x + count.x;
+            int yMax = start.y + count.y;
+            for (int x = start.x; x < xMax; x++)
+            {
+                for (int y = start.y; y < yMax; y++)
+                {
+                    yield return (x, y);
+                }
+            }
+        }
+
+        public static IEnumerable<(int x, int y, int z)> Range((int x, int y, int z) start, (int x, int y, int z) count)
+        {
+            int xMax = start.x + count.x;
+            int yMax = start.y + count.y;
+            int zMax = start.z + count.z;
+            for (int x = start.x; x < xMax; x++)
+            {
+                for (int y = start.y; y < yMax; y++)
+                {
+                    for (int z = start.z; z < zMax; z++)
+                    {
+                        yield return (x, y, z);
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    public static class ListRandom
+    {
         /// <summary>
         /// Random Reorder the list by weight
         /// </summary>
@@ -342,38 +350,6 @@ namespace Minerva.Module
             {
                 int j = UnityEngine.Random.Range(0, i + 1);
                 (list[j], list[i]) = (list[i], list[j]);
-            }
-        }
-
-
-
-        public static IEnumerable<(int, int)> Range((int x, int y) start, (int x, int y) count)
-        {
-            int xMax = start.x + count.x;
-            int yMax = start.y + count.y;
-            for (int x = start.x; x < xMax; x++)
-            {
-                for (int y = start.y; y < yMax; y++)
-                {
-                    yield return (x, y);
-                }
-            }
-        }
-
-        public static IEnumerable<(int x, int y, int z)> Range((int x, int y, int z) start, (int x, int y, int z) count)
-        {
-            int xMax = start.x + count.x;
-            int yMax = start.y + count.y;
-            int zMax = start.z + count.z;
-            for (int x = start.x; x < xMax; x++)
-            {
-                for (int y = start.y; y < yMax; y++)
-                {
-                    for (int z = start.z; z < zMax; z++)
-                    {
-                        yield return (x, y, z);
-                    }
-                }
             }
         }
     }
