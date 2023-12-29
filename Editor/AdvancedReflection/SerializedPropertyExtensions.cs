@@ -17,8 +17,16 @@ namespace Minerva.Module.Editor
         public static object GetValue(this SerializedProperty property)
         {
             if (property == null) return null;
-            if (!property.isArray) return property.boxedValue;
-
+            // since unity now introduce this boxed value, try use this method instead of using reflections might be better.
+            // however sometimes the property could be an array or something that cannot be accessed by the boxed value
+            if (!property.isArray)
+            {
+                try
+                {
+                    return property.boxedValue;
+                }
+                catch { }
+            }
             string propertyPath = property.propertyPath;
             object value = property.serializedObject.targetObject;
             int i = 0;
