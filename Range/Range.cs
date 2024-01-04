@@ -56,5 +56,9 @@ namespace Minerva.Module
             return $"[{min}, {max}]";
         }
 
+        public float Clamp(float size)
+        {
+            return UnityEngine.Mathf.Clamp(size, min, max);
+        }
     }
 }
