@@ -444,7 +444,8 @@ namespace Minerva.Module.Editor
         public static void PropertyField(Rect position, SerializedProperty property, GUIContent label, bool includeChildren = false)
         {
             var drawer = PropertyDrawerFinder.FindDrawerForProperty(property);
-            if (drawer == null || drawer.GetType() == typeof(PropertyDrawer) || drawer.GetType().IsSubclassOf(typeof(PropertyDrawer)))
+            Type type = drawer?.GetType();
+            if (drawer == null || type == typeof(PropertyDrawer) && !type.IsSubclassOf(typeof(PropertyDrawer)))
             {
                 EditorGUI.PropertyField(position, property, label, includeChildren);
             }
@@ -459,7 +460,8 @@ namespace Minerva.Module.Editor
         public static float GetPropertyHeight(SerializedProperty property, GUIContent label, bool includeChildren = true)
         {
             var drawer = PropertyDrawerFinder.FindDrawerForProperty(property);
-            if (drawer == null || drawer.GetType() == typeof(PropertyDrawer))
+            Type type = drawer?.GetType();
+            if (drawer == null || type == typeof(PropertyDrawer) && !type.IsSubclassOf(typeof(PropertyDrawer)))
             {
                 return EditorGUI.GetPropertyHeight(property, label, includeChildren);
             }
