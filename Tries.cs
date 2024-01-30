@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Windows;
 
 namespace Minerva.Module
 {
@@ -420,6 +421,21 @@ namespace Minerva.Module
         public Tries<TValue> Clone()
         {
             return new Tries<TValue>(root.Clone(), separator);
+        }
+
+
+
+
+        public void CopyFirstLevelKeys(List<string> copyTo)
+        {
+            copyTo.Clear();
+            copyTo.AddRange(root.children.Keys);
+        }
+
+        public void CopyKeys(List<string> copyTo)
+        {
+            copyTo.Clear();
+            GetKeys(copyTo, root, string.Empty);
         }
     }
 
