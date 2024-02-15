@@ -9,8 +9,9 @@ namespace Minerva.Module
     /// Abstract class of building an state machine in Unity Coroutine (of state Enum <see cref="T"/>)
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class CoroutineStateMachine<T> : CoroutineStateMachineBase, IEnumerator where T : struct, Enum
+    public class CoroutineStateMachine<T> : CoroutineStateMachineBase, IEnumerator where T : struct, Enum
     {
+        readonly T initialState;
         [SerializeField] T state;
         [SerializeField] T nextState;
         readonly Dictionary<T, Func<CoroutineStateMachine<T>, IEnumerator>> actionMap;
@@ -19,9 +20,10 @@ namespace Minerva.Module
         public T NextState => nextState;
 
 
-        protected CoroutineStateMachine()
+        public CoroutineStateMachine(T initState)
         {
             actionMap = new Dictionary<T, Func<CoroutineStateMachine<T>, IEnumerator>>();
+            this.initialState = initState;
         }
 
 
@@ -45,8 +47,7 @@ namespace Minerva.Module
             {
                 started = true;
                 currentStateHadNext = true;
-                var firstState = InitStateMachine();
-                currentStateEnumerator = actionMap[firstState](this);
+                currentStateEnumerator = actionMap[initialState](this);
                 currentStateHadNext = currentStateEnumerator.MoveNext();
                 return true;
             }
@@ -101,12 +102,6 @@ namespace Minerva.Module
                 yield return null;
             }
         }
-
-        /// <summary>
-        /// Init the state machine
-        /// </summary>
-        /// <returns> The first state of the state machine </returns>
-        protected abstract T InitStateMachine();
 
 
         /// <summary>
