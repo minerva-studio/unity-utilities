@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.Windows;
 
 namespace Minerva.Module
@@ -42,6 +43,21 @@ namespace Minerva.Module
                 }
 
                 return node;
+            }
+
+            public void TraverseCopy(KeyValuePair<string, TValue>[] arr, ref int idx, char separator, Stack<string> keyChain)
+            {
+                if (isTerminated)
+                {
+                    arr[idx] = KeyValuePair.Create(string.Join(separator, keyChain), value);
+                    idx++;
+                }
+                foreach (var (key, val) in children)
+                {
+                    keyChain.Push(key);
+                    val.TraverseCopy(arr, ref idx, separator, keyChain);
+                    keyChain.Pop();
+                }
             }
         }
 
@@ -232,13 +248,11 @@ namespace Minerva.Module
         public TValue Get(string s)
         {
             string[] prefix = s.Split(separator);
-            Node currentNode = GetNode(prefix);
-            if (!currentNode.isTerminated)
-            {
+            if (!TryGetNode(prefix, out var currentNode) || !currentNode.isTerminated)
                 throw new KeyNotFoundException();
-            }
             return currentNode.value;
         }
+
         public void Set(string s, TValue value)
         {
             string[] prefix = s.Split(separator);
@@ -272,8 +286,18 @@ namespace Minerva.Module
                 return new Tries<TValue>(root, separator);
             }
             string[] prefix = s.Split(separator);
-            Node currentNode = GetNode(prefix);
-            return currentNode == null ? throw new ArgumentException() : new Tries<TValue>(currentNode, separator);
+            return TryGetNode(prefix, out var currentNode)
+                ? new Tries<TValue>(currentNode, separator)
+                : throw new KeyNotFoundException();
+        }
+
+        public Tries<TValue> GetSubTrie(IEnumerable<string> prefix)
+        {
+            return (prefix is IList<string> ls
+                ? TryGetNode(ls, out var currentNode)
+                : TryGetNode(prefix, out currentNode))
+                ? new Tries<TValue>(currentNode, separator)
+                : throw new ArgumentException();
         }
 
         public bool TryGetSubTrie(string s, out Tries<TValue> trie)
@@ -288,40 +312,43 @@ namespace Minerva.Module
             return true;
         }
 
+        public bool TryGetSubTrie(IEnumerable<string> prefix, out Tries<TValue> trie)
+        {
+            if (prefix is string[] stra ? TryGetNode(stra, out Node currentNode) : TryGetNode(prefix, out currentNode))
+            {
+                trie = new Tries<TValue>(currentNode, separator);
+                return true;
+            }
+            trie = null;
+            return false;
+        }
+
         public List<string> GetFirstLevelKeys()
         {
             return root.children.Keys.ToList();
         }
 
-        private Node GetNode(string[] prefix)
+        private bool TryGetNode(IList<string> prefix, out Node node)
         {
             Node currentNode = root;
-            if (prefix.Length == 0)
-            {
-                return currentNode;
-            }
-            for (int i = 0; i < prefix.Length; i++)
+            for (int i = 0; i < prefix.Count; i++)
             {
                 string key = prefix[i];
-                if (!currentNode.children.ContainsKey(key))
+                if (!currentNode.children.TryGetValue(key, out currentNode))
                 {
-                    throw new KeyNotFoundException();
-                }
-                else
-                {
-                    currentNode = currentNode.children[key];
+                    node = null;
+                    return false;
                 }
             }
-
-            return currentNode;
+            node = currentNode;
+            return node != null;
         }
 
-        private bool TryGetNode(string[] prefix, out Node node)
+        private bool TryGetNode(IEnumerable<string> prefix, out Node node)
         {
             Node currentNode = root;
-            for (int i = 0; i < prefix.Length; i++)
+            foreach (string key in prefix)
             {
-                string key = prefix[i];
                 if (!currentNode.children.TryGetValue(key, out currentNode))
                 {
                     node = null;
@@ -395,10 +422,11 @@ namespace Minerva.Module
             root = new Node();
         }
 
-        public void Clear(string key)
+        public bool Clear(string key)
         {
-            var node = GetNode(key.Split(separator));
+            if (!TryGetNode(key.Split(separator), out var node)) return false;
             node.isTerminated = false;
+            return true;
         }
 
         public bool Contains(KeyValuePair<string, TValue> item)
@@ -408,9 +436,8 @@ namespace Minerva.Module
 
         public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex)
         {
-            var list = new List<KeyValuePair<string, TValue>>();
-            GetKeyValuePairs(list, root);
-            Array.Copy(list.ToArray(), 0, array, arrayIndex, list.Count);
+            int index = arrayIndex;
+            root?.TraverseCopy(array, ref index, separator, new());
         }
 
         public bool Remove(KeyValuePair<string, TValue> item)

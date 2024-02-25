@@ -40,6 +40,21 @@ namespace Minerva.Module
 
                 return node;
             }
+
+            public void TraverseCopy(Stack<string> keyChain, char separator, string[] arr, ref int idx)
+            {
+                if (isTerminated)
+                {
+                    arr[idx] = string.Join(separator, keyChain);
+                    idx++;
+                }
+                foreach (var (key, val) in children)
+                {
+                    keyChain.Push(key);
+                    val.TraverseCopy(keyChain, separator, arr, ref idx);
+                    keyChain.Pop();
+                }
+            }
         }
 
 
@@ -195,8 +210,9 @@ namespace Minerva.Module
                 return new Trie(root, separator);
             }
             string[] prefix = GetPrefix(s);
-            Node currentNode = GetNode(prefix);
-            return currentNode == null ? throw new ArgumentException() : new Trie(currentNode, separator);
+            return TryGetNode(prefix, out var currentNode)
+                ? new Trie(currentNode, separator)
+                : throw new ArgumentException();
         }
 
         public bool TryGetSubTrie(string s, out Trie trie)
@@ -214,18 +230,6 @@ namespace Minerva.Module
         public List<string> GetChildrenKeys()
         {
             return root.children.Keys.ToList();
-        }
-
-        private Node GetNode(string[] prefix)
-        {
-            Node currentNode = root;
-            for (int i = 0; i < prefix.Length; i++)
-            {
-                string key = prefix[i];
-                currentNode = currentNode.children[key];
-            }
-
-            return currentNode;
         }
 
         private bool TryGetNode(string[] prefix, out Node node)
@@ -281,17 +285,17 @@ namespace Minerva.Module
             root = new Node();
         }
 
-        public void Clear(string key)
+        public bool Clear(string key)
         {
-            var node = GetNode(GetPrefix(key));
+            if (!TryGetNode(key.Split(separator), out var node)) return false;
             node.isTerminated = false;
+            return true;
         }
 
         public void CopyTo(string[] array, int arrayIndex)
         {
-            var list = new List<string>();
-            GetKeys(list, root);
-            Array.Copy(list.ToArray(), 0, array, arrayIndex, list.Count);
+            int index = arrayIndex;
+            root?.TraverseCopy(new(), separator, array, ref index);
         }
 
         public Trie Clone()
