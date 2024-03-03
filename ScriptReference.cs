@@ -66,7 +66,7 @@ namespace Minerva.Module
     /// class that refer to an custom script
     /// </summary>
     [Serializable]
-    public class ScriptReference<T> : ScriptReference where T : UnityEngine.Object
+    public class ScriptReference<T> : ScriptReference
     {
         public override Type Type => typeof(T);
 

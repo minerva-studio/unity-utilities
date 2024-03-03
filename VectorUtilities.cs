@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Minerva.Module
 {
+
     /// <summary>
     /// a utility class for more vector support 
     /// Author : Wendi Cai 

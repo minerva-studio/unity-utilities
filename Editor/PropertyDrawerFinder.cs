@@ -111,43 +111,31 @@ namespace Minerva.Module.Editor
             // For benchmark (on DungeonLooter 0.8.4)
             // - Original, search all assemblies and classes: 250 msec
             // - Wappen optimized, search only specific name assembly and classes: 5 msec
-
-            foreach (Assembly assem in AppDomain.CurrentDomain.GetAssemblies())
+            // - Use type cache now, should be negligible
+            foreach (Type candidate in TypeCache.GetTypesWithAttribute<CustomPropertyDrawer>())
             {
-                // Wappen optimization: filter only "*Editor" assembly
-                if (!assem.FullName.Contains("Editor"))
-                    continue;
-
-                foreach (Type candidate in assem.GetTypes())
+                // See if this is a class that has [CustomPropertyDrawer( typeof( T ) )]
+                foreach (Attribute a in candidate.GetCustomAttributes(typeof(CustomPropertyDrawer)))
                 {
-                    // Wappen optimization: filter only "*Drawer" class name, like "SomeTypeDrawer"
-                    if (!candidate.Name.Contains("Drawer"))
-                        continue;
-
-                    // See if this is a class that has [CustomPropertyDrawer( typeof( T ) )]
-                    foreach (Attribute a in candidate.GetCustomAttributes(typeof(CustomPropertyDrawer)))
+                    if (a is not CustomPropertyDrawer drawerAttribute)
                     {
-                        if (!a.GetType().IsSubclassOf(typeof(CustomPropertyDrawer)) && a.GetType() != typeof(CustomPropertyDrawer))
-                        {
-                            continue;
-                        }
-                        CustomPropertyDrawer drawerAttribute = (CustomPropertyDrawer)a;
-                        Type drawerType = (Type)typeField.GetValue(drawerAttribute);
-                        if (drawerType != propertyType &&
-                            (!(bool)childField.GetValue(drawerAttribute) || !propertyType.IsSubclassOf(drawerType)) &&
-                            (!(bool)childField.GetValue(drawerAttribute) || !IsGenericSubclass(drawerType, propertyType)))
-                        {
-                            continue;
-                        }
-                        if (!candidate.IsSubclassOf(typeof(PropertyDrawer)))
-                        {
-                            continue;
-                        }
-                        // Technical note: PropertyDrawer.fieldInfo will not available via this drawer
-                        // It has to be manually setup by caller.
-                        var drawer = (PropertyDrawer)Activator.CreateInstance(candidate);
-                        return drawer;
+                        continue;
                     }
+                    Type drawerType = (Type)typeField.GetValue(drawerAttribute);
+                    if (drawerType != propertyType &&
+                        (!(bool)childField.GetValue(drawerAttribute) || !propertyType.IsSubclassOf(drawerType)) &&
+                        (!(bool)childField.GetValue(drawerAttribute) || !IsGenericSubclass(drawerType, propertyType)))
+                    {
+                        continue;
+                    }
+                    if (!candidate.IsSubclassOf(typeof(PropertyDrawer)))
+                    {
+                        continue;
+                    }
+                    // Technical note: PropertyDrawer.fieldInfo will not available via this drawer
+                    // It has to be manually setup by caller.
+                    var drawer = (PropertyDrawer)Activator.CreateInstance(candidate);
+                    return drawer;
                 }
             }
 
