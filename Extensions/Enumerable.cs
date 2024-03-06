@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -8,19 +7,6 @@ namespace Minerva.Module
 {
     public static class Enumerable
     {
-        /// <summary>
-        /// return a list with a cloned items and in a different list instance
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        public static IEnumerable<T> DeepClone<T>(this IEnumerable<T> list) where T : ICloneable
-        {
-            if (list is null) throw new ArgumentNullException();
-
-            return list.Select(s => (T)s.Clone());
-        }
-
         /// <summary>
         /// return a list with a cloned items and in a different list instance
         /// </summary>
@@ -37,79 +23,6 @@ namespace Minerva.Module
                 newList.Add((T)item.Clone());
             }
             return newList;
-        }
-
-        /// <summary>
-        /// find whether two IEnumerable matchs all elements in the list (same count, call IEquatable)
-        /// <br/>
-        /// as list == list for all element (unordered)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="ts1"></param>
-        /// <param name="ts2"></param>
-        /// <returns></returns>
-        public static bool MatchAll<T>(this IEnumerable<T> ts1, IEnumerable<T> ts2)
-        {
-            if (ts1.Count() != ts2.Count()) return false;
-            return ts1.ContainsAll(ts2);
-        }
-
-        /// <summary>
-        /// find whether two IEnumerable matchs all elements in the list (same count, call IEquatable)
-        /// <br/>
-        /// as list == list for all element (ordered)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="ts1"></param>
-        /// <param name="ts2"></param>
-        /// <returns></returns>
-        public static bool IndenticalTo<T>(this IEnumerable<T> ts1, IEnumerable<T> ts2)
-        {
-            if (ts1.Count() != ts2.Count()) return false;
-            return ts1.ContainsAll(ts2);
-        }
-
-        /// <summary>
-        /// find whether first IEnumerable contains all elements in the second list (all IEquatable)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="ts1"></param>
-        /// <param name="ts2"></param>
-        /// <returns></returns>
-        public static bool ContainsAll<T>(this IEnumerable<T> ts1, IEnumerable<T> ts2)
-        {
-            return ts2.All(t => ts1.Contains(t));
-        }
-
-        /// <summary>
-        /// find whether first IEnumerable contains any elements in the second list (all IEquatable)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="ts1"></param>
-        /// <param name="ts2"></param>
-        /// <returns></returns>
-        public static bool ContainsAny<T>(this IEnumerable<T> ts1, IEnumerable<T> ts2)
-        {
-            return ts2.Any(t => ts1.Contains(t));
-        }
-
-        /// <summary>
-        /// get the most common item in the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="ts"></param>
-        /// <returns></returns>
-        public static T Mode<T>(this IEnumerable<T> ts)
-        {
-            Dictionary<T, int> keyValuePairs = new();
-            foreach (var item in ts)
-            {
-                if (!keyValuePairs.TryAdd(item, 1))
-                    keyValuePairs[item] += 1;
-            }
-            foreach (var item in keyValuePairs)
-                Debug.Log(item.Key + ": " + item.Value);
-            return keyValuePairs.OrderByDescending(k => k.Value).FirstOrDefault((a) => true).Key;
         }
 
         /// <summary>
@@ -132,225 +45,23 @@ namespace Minerva.Module
             return newList;
         }
 
-        public static IEnumerable<(int, int)> Range((int x, int y) start, (int x, int y) count)
-        {
-            int xMax = start.x + count.x;
-            int yMax = start.y + count.y;
-            for (int x = start.x; x < xMax; x++)
-            {
-                for (int y = start.y; y < yMax; y++)
-                {
-                    yield return (x, y);
-                }
-            }
-        }
-
-        public static IEnumerable<(int x, int y, int z)> Range((int x, int y, int z) start, (int x, int y, int z) count)
-        {
-            int xMax = start.x + count.x;
-            int yMax = start.y + count.y;
-            int zMax = start.z + count.z;
-            for (int x = start.x; x < xMax; x++)
-            {
-                for (int y = start.y; y < yMax; y++)
-                {
-                    for (int z = start.z; z < zMax; z++)
-                    {
-                        yield return (x, y, z);
-                    }
-                }
-            }
-        }
-    }
-
-
-
-    public static class ListRandom
-    {
         /// <summary>
-        /// Random Reorder the list by weight
+        /// get the most common item in the list
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="weightables"></param>
-        public static void RandomReorder<T>(this IList<T> list)
-        {
-            if (list == null) throw new ArgumentNullException();
-            int count = list.Count;
-            if (count == 0) throw new InvalidOperationException();
-            var randomResult = new List<T>();
-            while (list.Count != 0)
-            {
-                int index = UnityEngine.Random.Range(0, list.Count);
-                var value = list[index];
-                list.RemoveAt(index);
-                randomResult.Add(value);
-                list.Remove(value);
-
-            }
-            list.Clear();
-            foreach (var item in randomResult)
-            {
-                list.Add(item);
-            }
-        }
-
-        /// <summary> 
-        /// Pop a random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
+        /// <param name="ts"></param>
         /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomPop<T>(this IList<T> list)
+        public static T Mode<T>(this IEnumerable<T> ts)
         {
-            if (list == null) throw new ArgumentNullException();
-            int count = list.Count;
-            if (count == 0) throw new InvalidOperationException();
-
-
-            int index = UnityEngine.Random.Range(0, count);
-            var value = list[index];
-            list.RemoveAt(index);
-            return value;
-        }
-
-        /// <summary>
-        /// Get a Random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomGet<T>(this IList<T> list)
-        {
-            if (list == null) throw new ArgumentNullException();
-
-
-            int count = list.Count;
-            if (count == 0) throw new InvalidOperationException();
-
-
-            int index = UnityEngine.Random.Range(0, count);
-            return list[index];
-        }
-
-        /// <summary>
-        /// Get a Random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomGet<T>(this IEnumerable<T> list)
-        {
-            if (list == null) throw new ArgumentNullException();
-
-            int count = list.Count();
-            if (count == 0) throw new InvalidOperationException();
-
-
-            int index = UnityEngine.Random.Range(0, count);
-            foreach (var item in list)
+            Dictionary<T, int> keyValuePairs = new();
+            foreach (var item in ts)
             {
-                if (index-- <= 0)
-                {
-                    return item;
-                }
+                if (!keyValuePairs.TryAdd(item, 1))
+                    keyValuePairs[item] += 1;
             }
-            throw new InvalidOperationException();
-        }
-
-        /// <summary>
-        /// Get a Random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <param name="n"></param>
-        /// <param name="allowRepeat"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public static List<T> RandomGet<T>(this IList<T> list, int n, bool allowRepeat = false)
-        {
-            if (list == null) throw new ArgumentNullException();
-            if (n == 0) return new List<T>();
-            if (n > list.Count) throw new ArgumentOutOfRangeException();
-            if (n < list.Count / 2)
-            {
-                List<T> result = new List<T>();
-                for (int i = 0; i < n; i++)
-                {
-                    if (list.Count == 0)
-                    {
-                        return result;
-                    }
-                    else
-                    {
-                        T item = list[UnityEngine.Random.Range(0, list.Count)];
-                        if (allowRepeat || !result.Contains(item)) result.Add(item);
-                        else i--;
-                    }
-                }
-                return result;
-            }
-            else
-            {
-                List<T> result = new List<T>(list);
-                for (int i = n; i < list.Count; i++)
-                {
-                    result.RemoveAt(UnityEngine.Random.Range(0, result.Count));
-                }
-                return result;
-            }
-        }
-
-        /// <summary>
-        /// Get a Random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <param name="n"></param>
-        /// <param name="allowRepeat"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public static List<T> RandomGet<T>(this IEnumerable<T> list, int n, bool allowRepeat = false)
-        {
-            if (list == null) throw new ArgumentNullException();
-            if (n > list.Count()) throw new ArgumentOutOfRangeException();
-            var ts = list.ToList();
-            List<T> result = new List<T>();
-            for (int i = 0; i < n; i++)
-            {
-                if (ts.Count == 0)
-                {
-                    return result;
-                }
-                else
-                {
-                    T item = ts[UnityEngine.Random.Range(0, ts.Count)];
-                    result.Add(item);
-                    if (!allowRepeat) ts.Remove(item);
-                }
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// An in-position shuffle
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        public static void Shuffle<T>(this T list) where T : IList
-        {
-            for (int i = list.Count - 1; i > 0; i--)
-            {
-                int j = UnityEngine.Random.Range(0, i + 1);
-                (list[j], list[i]) = (list[i], list[j]);
-            }
+            foreach (var item in keyValuePairs)
+                Debug.Log(item.Key + ": " + item.Value);
+            return keyValuePairs.OrderByDescending(k => k.Value).FirstOrDefault((a) => true).Key;
         }
     }
 }
