@@ -104,6 +104,7 @@ namespace Minerva.Module
     {
         private List<T> counter;
         public event Action<int> OnFilled;
+        T[] cachedItems;
 
         List<T> ICounter<T>.Counter => counter;
         public int Count => counter.Count;
@@ -128,6 +129,7 @@ namespace Minerva.Module
                 return false;
             }
             counter.Add(obj);
+            cachedItems = null;
             OnFilled?.Invoke(counter.Count);
             return true;
         }
@@ -136,6 +138,7 @@ namespace Minerva.Module
         {
             if (obj == null) return false;
             bool v = counter.Remove(obj);
+            cachedItems = null;
             if (v) OnFilled?.Invoke(counter.Count);
             return v;
         }
@@ -144,6 +147,7 @@ namespace Minerva.Module
         {
             if (Count == 0) return;
             counter.Clear();
+            cachedItems = Array.Empty<T>();
             OnFilled?.Invoke(counter.Count);
         }
 
@@ -161,7 +165,8 @@ namespace Minerva.Module
         {
             get
             {
-                var arr = new T[counter.Count];
+                if (cachedItems != null) return cachedItems;
+                var arr = cachedItems = new T[counter.Count];
                 counter.CopyTo(arr, 0);
                 return arr;
             }

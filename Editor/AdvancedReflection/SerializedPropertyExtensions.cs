@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEditor;
@@ -65,6 +66,7 @@ namespace Minerva.Module.Editor
             Undo.RecordObject(property.serializedObject.targetObject, $"Set {property.name}");
 
             property.SetValueNoRecord(value);
+            property.serializedObject.Update();
 
             EditorUtility.SetDirty(property.serializedObject.targetObject);
             property.serializedObject.ApplyModifiedProperties();
@@ -81,13 +83,23 @@ namespace Minerva.Module.Editor
 
             int i = 0;
             NextPathComponent(propertyPath, ref i, out var deferredToken);
+            Stack<(object, PropertyPathComponent)> containers = new();
             while (NextPathComponent(propertyPath, ref i, out var token))
             {
                 container = GetPathComponentValue(container, deferredToken);
                 deferredToken = token;
+                containers.Push((container, token));
             }
-            Debug.Assert(!container.GetType().IsValueType, $"Cannot use SerializedObject.SetValue on a struct object, as the result will be set on a temporary.  Either change {container.GetType().Name} to a class, or use SetValue with a parent member.");
-            SetPathComponentValue(container, deferredToken, value);
+            object writtenValue = value;
+            do
+            {
+                (container, deferredToken) = containers.Pop();
+                SetPathComponentValue(container, deferredToken, writtenValue);
+                writtenValue = container;
+            }
+            while (container.GetType().IsValueType && containers.Count > 0);
+            //Debug.Assert(!container.GetType().IsValueType, $"Cannot use SerializedObject.SetValue on a struct object, as the result will be set on a temporary.  Either change {container.GetType().Name} to a class, or use SetValue with a parent member.");
+            //SetPathComponentValue(container, deferredToken, value);
         }
 
         // Union type representing either a property name or array element index.  The element
