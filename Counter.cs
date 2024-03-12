@@ -4,6 +4,7 @@ using UnityObject = UnityEngine.Object;
 
 namespace Minerva.Module
 {
+
     /// <summary>
     /// A semaphore like structure for the game to count something.
     /// </summary>
