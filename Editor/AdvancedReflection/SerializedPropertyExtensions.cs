@@ -78,6 +78,14 @@ namespace Minerva.Module.Editor
         /// </summary>
         public static void SetValueNoRecord(this SerializedProperty property, object value)
         {
+            if (!property.isArray)
+                try
+                {
+                    property.boxedValue = value;
+                    return;
+                }
+                catch { }
+
             string propertyPath = property.propertyPath;
             object container = property.serializedObject.targetObject;
 
