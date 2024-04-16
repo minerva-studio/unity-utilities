@@ -119,18 +119,12 @@ namespace Minerva.Module
         void ICollection<string>.Add(string item) => Add(item);
         public bool Add(string s)
         {
-            if (Contains(s))
-            {
-                return false;
-            }
-
             string[] prefix = GetPrefix(s);
 
             Node currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
             {
                 string key = prefix[i];
-                currentNode.count++;
                 //move to the path
                 if (currentNode.children.ContainsKey(key))
                 {
@@ -144,9 +138,29 @@ namespace Minerva.Module
                     currentNode = newNode;
                 }
             }
+            // already exist
+            if (currentNode.isTerminated)
+            {
+                return false;
+            }
+
             currentNode.isTerminated = true;
 
+            currentNode = root;
+            currentNode.count++;
+            for (int i = 0; i < prefix.Length; i++)
+            {
+                string key = prefix[i];
+                //move to the path 
+                currentNode = currentNode.children[key];
+                currentNode.count++;
+            }
             return true;
+        }
+
+        public void AddRange(IEnumerable<string> ts)
+        {
+            foreach (var item in ts) Add(item);
         }
 
         public bool Contains(string s)
@@ -173,20 +187,24 @@ namespace Minerva.Module
         {
             string[] prefix = GetPrefix(s);
             Node currentNode = root;
-            List<Node> stack = new List<Node>();
             for (int i = 0; i < prefix.Length; i++)
             {
                 string key = prefix[i];
                 if (!currentNode.children.ContainsKey(key)) return false;
                 Node childNode = currentNode.children[key];
-                stack.Add(currentNode);
                 currentNode = childNode;
             }
 
+            if (!currentNode.isTerminated) return false;
             currentNode.isTerminated = false;
-            foreach (var item in stack)
+
+            root.count--;
+            currentNode = root;
+            for (int i = 0; i < prefix.Length; i++)
             {
-                item.count--;
+                string key = prefix[i];
+                currentNode = currentNode.children[key];
+                currentNode.count--;
             }
             return true;
         }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Minerva.Module
 {
@@ -6,7 +8,7 @@ namespace Minerva.Module
     /// Describes an integer range, see <see cref="UnityEngine.RangeInt"/>
     /// </summary>
     [Serializable]
-    public struct RangeInt
+    public struct RangeInt : IEnumerable<int>
     {
         /// <summary>
         /// The starting index of the range, where 0 is the first position, 1 is the second,
@@ -48,7 +50,22 @@ namespace Minerva.Module
 
         public static implicit operator RangeInt(UnityEngine.RangeInt ri)
         {
-            return new RangeInt(ri.start, ri.length);
+            return new RangeInt(ri.start, ri.start + ri.length);
+        }
+
+        public static implicit operator System.Range(RangeInt ri)
+        {
+            return ri.min..ri.max;
+        }
+
+        public readonly IEnumerator<int> GetEnumerator()
+        {
+            for (int i = min; i < max; i++) yield return i;
+        }
+
+        readonly IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

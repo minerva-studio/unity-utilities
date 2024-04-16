@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Minerva.Module.Editor
 {
-    public class GUIScrollView : IDisposable
+    public readonly struct GUIScrollView : IDisposable
     {
         public GUIScrollView(ref Vector2 position, params GUILayoutOption[] options)
         {
@@ -15,7 +15,7 @@ namespace Minerva.Module.Editor
             position = GUILayout.BeginScrollView(position, style, options);
         }
 
-        public void Dispose()
+        public readonly void Dispose()
         {
             GUILayout.EndScrollView();
         }

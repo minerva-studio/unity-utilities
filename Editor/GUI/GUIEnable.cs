@@ -6,20 +6,14 @@ namespace Minerva.Module.Editor
     /// <summary>
     /// Control GUI enable state
     /// </summary>
-    public class GUIEnable : IDisposable
+    public readonly struct GUIEnable : IDisposable
     {
         private readonly bool lastState;
 
-        public GUIEnable()
-        {
-            lastState = GUI.enabled;
-            GUI.enabled = true;
-        }
-
-        public GUIEnable(bool lastState)
+        public GUIEnable(bool state)
         {
             this.lastState = GUI.enabled;
-            GUI.enabled = lastState;
+            GUI.enabled = state;
         }
 
         public static GUIEnable By(bool v)

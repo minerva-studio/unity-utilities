@@ -140,18 +140,12 @@ namespace Minerva.Module
 
         public bool Add(string s, TValue value)
         {
-            if (ContainsKey(s))
-            {
-                return false;
-            }
-
             string[] prefix = s.Split(separator);
 
             Node currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
             {
                 string key = prefix[i];
-                currentNode.count++;
                 //move to the path
                 if (currentNode.children.ContainsKey(key))
                 {
@@ -165,8 +159,20 @@ namespace Minerva.Module
                     currentNode = newNode;
                 }
             }
+            if (currentNode.isTerminated)
+            {
+                return false;
+            }
             currentNode.value = value;
             currentNode.isTerminated = true;
+            currentNode = root;
+            currentNode.count++;
+            for (int i = 0; i < prefix.Length; i++)
+            {
+                string key = prefix[i];
+                currentNode = currentNode.children[key];
+                currentNode.count++;
+            }
 
             return true;
         }
@@ -200,20 +206,24 @@ namespace Minerva.Module
         {
             string[] prefix = s.Split(separator);
             var currentNode = root;
-            var stack = new List<Node>();
             for (int i = 0; i < prefix.Length; i++)
             {
                 string key = prefix[i];
                 if (!currentNode.children.ContainsKey(key)) return false;
                 var childNode = currentNode.children[key];
-                stack.Add(currentNode);
                 currentNode = childNode;
             }
 
+            if (!currentNode.isTerminated) return false;
             currentNode.isTerminated = false;
-            foreach (var item in stack)
+
+            currentNode = root;
+            currentNode.count--;
+            for (int i = 0; i < prefix.Length; i++)
             {
-                item.count--;
+                string key = prefix[i];
+                currentNode = currentNode.children[key];
+                currentNode.count--;
             }
             return true;
         }
@@ -431,7 +441,17 @@ namespace Minerva.Module
 
         public bool Contains(KeyValuePair<string, TValue> item)
         {
-            return ContainsKey(item.Key) && Get(item.Key).Equals(item.Value);
+            string s = item.Key;
+            string[] prefix = s.Split(separator);
+            var currentNode = root;
+            for (int i = 0; i < prefix.Length; i++)
+            {
+                string key = prefix[i];
+                if (!currentNode.children.ContainsKey(key)) return false;
+                var childNode = currentNode.children[key];
+                currentNode = childNode;
+            }
+            return currentNode.isTerminated && Equals(currentNode.value, item.Value);
         }
 
         public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex)
@@ -442,7 +462,28 @@ namespace Minerva.Module
 
         public bool Remove(KeyValuePair<string, TValue> item)
         {
-            return Contains(item) && ((IDictionary<string, TValue>)this).Remove(item.Key);
+            string s = item.Key;
+            string[] prefix = s.Split(separator);
+            var currentNode = root;
+            for (int i = 0; i < prefix.Length; i++)
+            {
+                string key = prefix[i];
+                if (!currentNode.children.ContainsKey(key)) return false;
+                var childNode = currentNode.children[key];
+                currentNode = childNode;
+            }
+            if (!currentNode.isTerminated || Equals(currentNode.value, item.Value)) return false;
+
+            currentNode.isTerminated = false;
+            currentNode = root;
+            currentNode.count--;
+            for (int i = 0; i < prefix.Length; i++)
+            {
+                string key = prefix[i];
+                currentNode = currentNode.children[key];
+                currentNode.count--;
+            }
+            return true;
         }
 
         public Tries<TValue> Clone()

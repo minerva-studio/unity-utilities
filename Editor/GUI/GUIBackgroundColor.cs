@@ -6,7 +6,7 @@ namespace Minerva.Module.Editor
     /// <summary>
     /// Control GUI color state
     /// </summary>
-    public class GUIBackgroundColor : IDisposable
+    public readonly struct GUIBackgroundColor : IDisposable
     {
         private readonly Color lastState;
 

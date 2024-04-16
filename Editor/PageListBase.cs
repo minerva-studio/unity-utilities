@@ -60,7 +60,7 @@ namespace Minerva.Module.Editor
                 using (new GUIEnable(page > 1))
                     if (GUILayout.Button("Last", GUILayout.MaxWidth(80))) page--;
 
-                using (new GUIEnable())
+                using (new GUIEnable(true))
                 {
                     EditorGUILayout.LabelField("Page", GUILayout.MaxWidth(30));
                     if (MaxPage != 0) page = EditorGUILayout.IntSlider(page, 1, MaxPage);
