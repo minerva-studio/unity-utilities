@@ -17,5 +17,26 @@ namespace Minerva.Module
         {
             return new Color(Random.Range(color.r, color1.r), Random.Range(color.g, color1.g), Random.Range(color.b, color1.b), Random.Range(color.a, color1.a));
         }
+
+        /// <summary>
+        /// Get color hex code
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
+        public static string ToHexString(this Color color)
+        {
+            return $"#{(int)(color.r * 255f):X2}{(int)(color.g * 255f):X2}{(int)(color.b * 255f):X2}{(int)(color.a * 255f):X2}";
+        }
+
+        /// <summary>
+        /// Get color hex code
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
+        public static int ToHex(this Color color)
+        {
+            return (int)(color.r * 255f) << 16 + (int)(color.g * 255f) << 8 + (int)(color.b * 255f);
+        }
+
     }
 }
