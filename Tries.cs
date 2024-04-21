@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Windows;
 
@@ -45,18 +46,37 @@ namespace Minerva.Module
                 return node;
             }
 
-            public void TraverseCopy(KeyValuePair<string, TValue>[] arr, ref int idx, char separator, Stack<string> keyChain)
+            public void TraverseCopy(StringBuilder stringBuilder, char separator, KeyValuePair<string, TValue>[] arr, ref int idx)
             {
-                if (isTerminated)
+                foreach (var (key, node) in children)
                 {
-                    arr[idx] = KeyValuePair.Create(string.Join(separator, keyChain), value);
-                    idx++;
+                    var baseLength = stringBuilder.Length;
+                    stringBuilder.Append(key);
+                    if (node.isTerminated)
+                    {
+                        arr[idx] = new KeyValuePair<string, TValue>(stringBuilder.ToString(), node.value);
+                        idx++;
+                    }
+                    stringBuilder.Append(separator);
+                    node.TraverseCopy(stringBuilder, separator, arr, ref idx);
+                    stringBuilder.Length = baseLength;
                 }
-                foreach (var (key, val) in children)
+            }
+
+            public void TraverseCopy(StringBuilder stringBuilder, char separator, string[] arr, ref int idx)
+            {
+                foreach (var (key, node) in children)
                 {
-                    keyChain.Push(key);
-                    val.TraverseCopy(arr, ref idx, separator, keyChain);
-                    keyChain.Pop();
+                    var baseLength = stringBuilder.Length;
+                    stringBuilder.Append(key);
+                    if (node.isTerminated)
+                    {
+                        arr[idx] = stringBuilder.ToString();
+                        idx++;
+                    }
+                    stringBuilder.Append(separator);
+                    node.TraverseCopy(stringBuilder, separator, arr, ref idx);
+                    stringBuilder.Length = baseLength;
                 }
             }
         }
@@ -73,13 +93,13 @@ namespace Minerva.Module
 
         public int Count => root.count;
 
-        public List<string> Keys
+        public string[] Keys
         {
             get
             {
-                List<string> array = new();
-                GetKeys(array, root, "");
-                return array;
+                string[] keys = new string[root.count];
+                CopyTo(keys, 0);
+                return keys;
             }
         }
 
@@ -412,9 +432,13 @@ namespace Minerva.Module
 
         public IEnumerator<KeyValuePair<string, TValue>> GetEnumerator()
         {
-            var list = new List<KeyValuePair<string, TValue>>();
-            GetKeyValuePairs(list, root);
-            return list.GetEnumerator();
+            var index = 0;
+            KeyValuePair<string, TValue>[] keyValuePairs = new KeyValuePair<string, TValue>[Count];
+            root.TraverseCopy(new StringBuilder(), separator, keyValuePairs, ref index);
+            foreach (var item in keyValuePairs)
+            {
+                yield return item;
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -457,7 +481,13 @@ namespace Minerva.Module
         public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex)
         {
             int index = arrayIndex;
-            root?.TraverseCopy(array, ref index, separator, new());
+            root?.TraverseCopy(new(), separator, array, ref index);
+        }
+
+        public void CopyTo(string[] array, int arrayIndex)
+        {
+            int index = arrayIndex;
+            root?.TraverseCopy(new(), separator, array, ref index);
         }
 
         public bool Remove(KeyValuePair<string, TValue> item)

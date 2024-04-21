@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Minerva.Module
 {
@@ -41,18 +42,20 @@ namespace Minerva.Module
                 return node;
             }
 
-            public void TraverseCopy(Stack<string> keyChain, char separator, string[] arr, ref int idx)
+            public void TraverseCopy(StringBuilder stringBuilder, char separator, string[] arr, ref int idx)
             {
-                if (isTerminated)
+                foreach (var (key, node) in children)
                 {
-                    arr[idx] = string.Join(separator, keyChain);
-                    idx++;
-                }
-                foreach (var (key, val) in children)
-                {
-                    keyChain.Push(key);
-                    val.TraverseCopy(keyChain, separator, arr, ref idx);
-                    keyChain.Pop();
+                    var baseLength = stringBuilder.Length;
+                    stringBuilder.Append(key);
+                    if (node.isTerminated)
+                    {
+                        arr[idx] = stringBuilder.ToString();
+                        idx++;
+                    }
+                    stringBuilder.Append(separator);
+                    node.TraverseCopy(stringBuilder, separator, arr, ref idx);
+                    stringBuilder.Length = baseLength;
                 }
             }
         }
@@ -72,13 +75,13 @@ namespace Minerva.Module
 
         public ICollection<string> FirstLevelKeys => root.children.Keys.ToList();
 
-        public List<string> Keys
+        public string[] Keys
         {
             get
             {
-                List<string> array = new List<string>();
-                GetKeys(array, root, "");
-                return array;
+                string[] arr = new string[Count];
+                CopyTo(arr, 0);
+                return arr;
             }
         }
 
@@ -266,25 +269,32 @@ namespace Minerva.Module
             return node != null;
         }
 
-        private void GetKeys(List<string> list, Node node, string prefix = "")
+        private void GetKeys(List<string> list, Node node, StringBuilder sb)
         {
             foreach (var item in node.children)
             {
                 Node child = item.Value;
-                string conbinedKey = prefix + item.Key;
+                int currentLength = sb.Length;
+                sb.Append(item.Key);
                 if (child.isTerminated)
                 {
-                    list.Add(conbinedKey);
+                    int length = sb.Length;
+                    list.Add(sb.ToString());
+                    sb.Length = length;
                 }
-                GetKeys(list, child, conbinedKey + ".");
+                GetKeys(list, child, sb.Append(separator));
+                sb.Length = currentLength;
             }
         }
 
         public IEnumerator<string> GetEnumerator()
         {
-            var list = new List<string>();
-            GetKeys(list, root);
-            return list.GetEnumerator();
+            string[] arr = new string[Count];
+            CopyTo(arr, 0);
+            foreach (var item in arr)
+            {
+                yield return item;
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -319,6 +329,13 @@ namespace Minerva.Module
         public Trie Clone()
         {
             return new Trie(root.Clone(), separator);
+        }
+
+        public string[] ToArray()
+        {
+            string[] arry = new string[Count];
+            CopyTo(arry, 0);
+            return arry;
         }
     }
 }
