@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Minerva.Module.Editor
 {
+
     [CustomPropertyDrawer(typeof(DisplayIfAttribute))]
     public class DisplayIfAttributeDrawer : ConditionalFieldAttributeDrawer
     {
@@ -17,7 +18,6 @@ namespace Minerva.Module.Editor
 
         protected override void DrawField(Rect position, SerializedProperty property, GUIContent label, bool conditionMatches)
         {
-            property.serializedObject.Update();
             if (conditionMatches) DrawDefault(position, property, label);
         }
     }

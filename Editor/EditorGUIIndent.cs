@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 
 namespace Minerva.Module.Editor
@@ -8,20 +9,19 @@ namespace Minerva.Module.Editor
     /// </summary>
     public class EditorGUIIndent : IDisposable
     {
-        private readonly int indent;
+        private int indent;
+        private bool disposed;
 
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static EditorGUIIndent Default => new EditorGUIIndent();
 
-        public EditorGUIIndent()
-        {
-            this.indent = 1;
-            EditorGUI.indentLevel += indent;
-        }
+        public EditorGUIIndent() : this(1) { }
 
         public EditorGUIIndent(int indent)
         {
-            this.indent = indent;
-            EditorGUI.indentLevel += indent;
+            this.disposed = false;
+            this.indent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = EditorGUI.indentLevel + indent;
         }
 
         public static EditorGUIIndent By(int indentation = 1)
@@ -31,7 +31,9 @@ namespace Minerva.Module.Editor
 
         public void Dispose()
         {
-            EditorGUI.indentLevel -= indent;
+            if (disposed) return;
+            disposed = true;
+            EditorGUI.indentLevel = indent;
         }
     }
 }
