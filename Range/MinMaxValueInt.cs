@@ -17,9 +17,15 @@ namespace Minerva.Module
         public int Min => randomize ? range.min : value;
         public int Max => randomize ? range.max : value;
 
+
         public static implicit operator int(MinMaxValueInt minMaxValue)
         {
             return minMaxValue.Value;
+        }
+
+        public static implicit operator MinMaxValueInt(int value)
+        {
+            return new MinMaxValueInt() { randomize = false, value = value };
         }
     }
 }

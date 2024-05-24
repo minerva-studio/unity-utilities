@@ -13,7 +13,7 @@ namespace Minerva.Module.Editor
         private bool disposed;
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static EditorGUIIndent Default => new EditorGUIIndent();
+        public static EditorGUIIndent Increase => new EditorGUIIndent();
 
         public EditorGUIIndent() : this(1) { }
 

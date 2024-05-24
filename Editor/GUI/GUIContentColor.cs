@@ -10,10 +10,16 @@ namespace Minerva.Module.Editor
     {
         private readonly Color lastState;
 
-        public GUIContentColor(Color lastState)
+        public static GUIContentColor red => new GUIContentColor(Color.red);
+        public static GUIContentColor green => new GUIContentColor(Color.green);
+        public static GUIContentColor yellow => new GUIContentColor(Color.yellow);
+        public static GUIContentColor blue => new GUIContentColor(Color.blue);
+
+
+        public GUIContentColor(Color color)
         {
             this.lastState = GUI.contentColor;
-            GUI.contentColor = lastState;
+            GUI.contentColor = color;
         }
 
         public static GUIColor By(Color v)

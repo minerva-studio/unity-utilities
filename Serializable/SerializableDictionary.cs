@@ -1,35 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Minerva.Module
 {
+    [Serializable]
+    public class SerializableDictionary : SerializableDictionary<string, string>
+    {
+    }
+
     /// <summary>
     /// A serializable dictionary
-    /// </summary>
-    [Obsolete]
+    /// </summary> 
     [Serializable]
-    public class SerializableDictionary : Dictionary<string, string>, ISerializationCallbackReceiver
+    public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
     {
-        public List<StringPair> arguments;
+        [Serializable]
+        public class Data
+        {
+            public TKey key;
+            public TValue value;
+
+            public Data(TKey key, TValue value)
+            {
+                this.key = key;
+                this.value = value;
+            }
+        }
+
+        [SerializeField]
+        private Data[] keyValuePaires;
 
         public void OnAfterDeserialize()
         {
             Clear();
-            foreach (var item in arguments)
+            foreach (var item in keyValuePaires)
             {
-                Add(item.Key, item.Value);
+                Add(item.key, item.value);
             }
         }
 
         public void OnBeforeSerialize()
         {
-            arguments.Clear();
-            foreach (var item in this)
-            {
-                arguments.Add(new StringPair(item.Key, item.Value));
-            }
-            arguments.Sort();
+            keyValuePaires = this.Select(s => new Data(s.Key, s.Value)).ToArray();
         }
     }
 }

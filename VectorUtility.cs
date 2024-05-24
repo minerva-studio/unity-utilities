@@ -9,7 +9,7 @@ namespace Minerva.Module
     /// a utility class for more vector support 
     /// Author : Wendi Cai 
     /// </summary>
-    public static class VectorUtilities
+    public static class VectorUtility
     {
         public static bool IsVector3(string sVector)
         {
@@ -29,7 +29,7 @@ namespace Minerva.Module
             // Remove the parentheses
             if (sVector.StartsWith("(") && sVector.EndsWith(")"))
             {
-                sVector = sVector.Substring(1, sVector.Length - 2);
+                sVector = sVector[1..^1];
             }
 
             // split the items
@@ -46,13 +46,51 @@ namespace Minerva.Module
 
         public static bool TryParseVector3(string defaultValue, out Vector3 val)
         {
-            if (IsVector3(defaultValue))
+            try
             {
                 val = ToVector3(defaultValue);
                 return true;
             }
-            val = default;
-            return false;
+            catch (Exception)
+            {
+                val = default;
+                return false;
+            }
+        }
+
+        public static Vector4 ToVector4(string sVector)
+        {
+            // Remove the parentheses
+            if (sVector.StartsWith("(") && sVector.EndsWith(")"))
+            {
+                sVector = sVector[1..^1];
+            }
+
+            // split the items
+            string[] sArray = sVector.Split(',');
+
+            // store as a Vector3
+            Vector4 result = new Vector4(
+                float.Parse(sArray[0]),
+                float.Parse(sArray[1]),
+                float.Parse(sArray[2]),
+                float.Parse(sArray[3]));
+
+            return result;
+        }
+
+        public static bool TryParseVector4(string defaultValue, out Vector4 val)
+        {
+            try
+            {
+                val = ToVector4(defaultValue);
+                return true;
+            }
+            catch (Exception)
+            {
+                val = default;
+                return false;
+            }
         }
 
 
@@ -74,7 +112,7 @@ namespace Minerva.Module
             // Remove the parentheses
             if (sVector.StartsWith("(") && sVector.EndsWith(")"))
             {
-                sVector = sVector.Substring(1, sVector.Length - 2);
+                sVector = sVector[1..^1];
             }
 
             // split the items
@@ -90,13 +128,16 @@ namespace Minerva.Module
 
         public static bool TryParseVector2(string defaultValue, out Vector2 val)
         {
-            if (IsVector2(defaultValue))
+            try
             {
                 val = ToVector2(defaultValue);
                 return true;
             }
-            val = default;
-            return false;
+            catch (Exception)
+            {
+                val = default;
+                return false;
+            }
         }
 
 
@@ -342,10 +383,14 @@ namespace Minerva.Module
         {
             return new Vector2(UnityEngine.Random.value * x, UnityEngine.Random.value * y);
         }
-        public static Vector2 Random(Vector2 min, Vector2 max)
+
+        public static Vector2 Random(Vector2 min, Vector2 max) => Random(min.x, max.x, min.y, max.y);
+
+        public static Vector2 Random(float xMin, float xMax, float yMin, float yMax)
         {
-            return new Vector2(UnityEngine.Random.Range(min.x, max.x), UnityEngine.Random.Range(min.y, max.y));
+            return new Vector2(UnityEngine.Random.Range(xMin, xMax), UnityEngine.Random.Range(yMin, yMax));
         }
+
 
         public static Vector2Int Random(int x, int y)
         {
@@ -355,6 +400,11 @@ namespace Minerva.Module
         {
             return new Vector2Int(UnityEngine.Random.Range(min.x, max.x), UnityEngine.Random.Range(min.y, max.y));
         }
+        public static Vector2Int Random(int xMin, int xMax, int yMin, int yMax)
+        {
+            return new Vector2Int(UnityEngine.Random.Range(xMin, xMax), UnityEngine.Random.Range(yMin, yMax));
+        }
+
 
         public static Vector3 Random(float x, float y, float z)
         {
@@ -409,5 +459,16 @@ namespace Minerva.Module
                 }
             }
         }
+
+
+
+
+        public static Vector2 RandomRotate(this Vector2 vector, float rad)
+        {
+            Vector3 v = vector;
+            return v.RotateZ(UnityEngine.Random.value * rad);
+        }
+
+
     }
 }
