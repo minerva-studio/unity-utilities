@@ -160,7 +160,7 @@ namespace Minerva.Module
 
         public bool Add(string s, TValue value)
         {
-            string[] prefix = s.Split(separator);
+            string[] prefix = Split(s);
 
             Node currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
@@ -204,7 +204,7 @@ namespace Minerva.Module
 
         public bool ContainsKey(string s)
         {
-            string[] prefix = s.Split(separator);
+            string[] prefix = Split(s);
             Node currentNode = root;
 
             for (int i = 0; i < prefix.Length; i++)
@@ -222,9 +222,14 @@ namespace Minerva.Module
             return currentNode.isTerminated;
         }
 
+        string[] Split(string s)
+        {
+            return string.IsNullOrEmpty(s) ? new string[0] : s.Split(separator);
+        }
+
         public bool Remove(string s)
         {
-            string[] prefix = s.Split(separator);
+            string[] prefix = Split(s);
             var currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
             {
@@ -250,7 +255,7 @@ namespace Minerva.Module
 
         public bool TryGetValue(string s, out TValue value)
         {
-            string[] prefix = s.Split(separator);
+            string[] prefix = Split(s);
 
             Node currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
@@ -277,7 +282,7 @@ namespace Minerva.Module
 
         public TValue Get(string s)
         {
-            string[] prefix = s.Split(separator);
+            string[] prefix = Split(s);
             if (!TryGetNode(prefix, out var currentNode) || !currentNode.isTerminated)
                 throw new KeyNotFoundException();
             return currentNode.value;
@@ -285,7 +290,7 @@ namespace Minerva.Module
 
         public void Set(string s, TValue value)
         {
-            string[] prefix = s.Split(separator);
+            string[] prefix = Split(s);
 
             Node currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
@@ -315,7 +320,7 @@ namespace Minerva.Module
             {
                 return new Tries<TValue>(root, separator);
             }
-            string[] prefix = s.Split(separator);
+            string[] prefix = Split(s);
             return TryGetNode(prefix, out var currentNode)
                 ? new Tries<TValue>(currentNode, separator)
                 : throw new KeyNotFoundException();
@@ -332,7 +337,7 @@ namespace Minerva.Module
 
         public bool TryGetSubTrie(string s, out Tries<TValue> trie)
         {
-            string[] prefix = s.Split(separator);
+            string[] prefix = Split(s);
             if (!TryGetNode(prefix, out Node currentNode))
             {
                 trie = null;
@@ -466,7 +471,7 @@ namespace Minerva.Module
         public bool Contains(KeyValuePair<string, TValue> item)
         {
             string s = item.Key;
-            string[] prefix = s.Split(separator);
+            string[] prefix = Split(s);
             var currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
             {
@@ -493,7 +498,7 @@ namespace Minerva.Module
         public bool Remove(KeyValuePair<string, TValue> item)
         {
             string s = item.Key;
-            string[] prefix = s.Split(separator);
+            string[] prefix = Split(s);
             var currentNode = root;
             for (int i = 0; i < prefix.Length; i++)
             {
