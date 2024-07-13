@@ -29,7 +29,7 @@ namespace Minerva.Module
         /// <summary>
         /// A random value in the integer range
         /// </summary>
-        public int value { get => min == max ? min : UnityEngine.Random.Range(min, max); }
+        public int value { get => min == max ? min : UnityEngine.Random.Range(min, max + 1); }
 
         /// <summary>
         /// Constructs a new RangeInt with given start, length values.
