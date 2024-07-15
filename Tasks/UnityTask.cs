@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Minerva.Module.Tasks
@@ -22,6 +21,25 @@ namespace Minerva.Module.Tasks
                 current += Time.deltaTime;
                 await Task.Yield();
             }
+        }
+
+        public static async Task AsTask(this UnityEngine.Object obj)
+        {
+            while (obj)
+            {
+                await Task.Yield();
+            }
+        }
+
+        public static Task AsTask(this MonoBehaviour obj)
+        {
+            if (!obj)
+            {
+                return Task.CompletedTask;
+            }
+            var task = new TaskCompletionSource<object>();
+            obj.destroyCancellationToken.Register(() => task.SetResult(null));
+            return task.Task;
         }
     }
 }

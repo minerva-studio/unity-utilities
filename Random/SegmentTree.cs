@@ -1,6 +1,4 @@
-﻿using System;
-using Minerva.Module.WeightedRandom;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Minerva.Module.WeightedRandom

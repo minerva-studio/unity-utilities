@@ -1,3 +1,4 @@
+using Minerva.Module.Tasks.Internal;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,7 +10,6 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
-using Minerva.Module.Tasks.Internal;
 
 namespace Minerva.Module.Tasks
 {
