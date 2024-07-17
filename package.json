@@ -1,0 +1,20 @@
+{
+    "name": "com.minervastudio.utilities",
+    "version": "0.1.0",
+    "displayName": "C# code utilities",
+    "description": "Extra utilities for Unity",
+    "unity": "2021.3",
+    "dependencies": {},
+    "keywords": [
+        "external",
+        "utilities",
+        "C#",
+        "minerva studio",
+        "minerva game studio"
+    ],
+    "author": {
+        "name": "Minerva Game Studio",
+        "email": "library.of.meialia@gmail.com",
+        "url": "https://github.com/minerva-studio/unity-utilities"
+    }
+}
