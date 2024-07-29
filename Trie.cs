@@ -2,28 +2,220 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using UnityEngine.UIElements;
 
 namespace Minerva.Module
 {
-    public class Trie : IEnumerable<string>, IEnumerable, ICollection<string>
+    public class Trie : ITrie, IEnumerable<string>, IEnumerable, ICollection<string>
     {
-        private class Node
+        internal interface INode
         {
-            public Dictionary<string, Node> children;
+            public bool Clear();
+            public bool ContainsKey<T>(T prefix) where T : IList<string>;
+        }
+
+        internal class NodeBase<TNode> : INode where TNode : NodeBase<TNode>, INode
+        {
+            protected Dictionary<string, TNode> children;
             public int count;
             public bool isTerminated;
 
-            public Node()
+            public Dictionary<string, TNode> Children { get => children ??= new(); }
+            public int LocalCount => children?.Count ?? 0;
+
+            public bool Clear()
             {
-                children = new Dictionary<string, Node>();
+                int count = this.count;
+                Children.Clear();
+                this.count = 0;
+                return count > 0;
             }
 
-            public Node(bool isTerminated) : this()
+            public bool ContainsKey<T>(T prefix) where T : IList<string> => TryGetNode(prefix, out var node) && node.isTerminated;
+
+            public bool ContainsPartialKey<T>(T prefix) where T : IList<string> => TryGetNode(prefix, out var node) && node.count > 0;
+
+            /// <summary>
+            /// Shrink the trie
+            /// </summary>
+            public void Shrink()
             {
-                this.isTerminated = isTerminated;
+                if (this.count == 0)
+                {
+                    Clear();
+                    return;
+                }
+                foreach (var (key, childNode) in Children.ToArray())
+                {
+                    if (childNode.count == 0)
+                    {
+                        Children.Remove(key);
+                    }
+                    else childNode.Shrink();
+                }
             }
 
+            public IEnumerator<string[]> GetKeyEnumerator(Stack<string> stack)
+            {
+                if (isTerminated)
+                {
+                    yield return stack.ToArray();
+                }
+                if (count <= 1) yield break;
+                foreach (var (key, node) in Children)
+                {
+                    stack.Push(key);
+                    var enumerator = node.GetKeyEnumerator(stack);
+                    while (enumerator.MoveNext())
+                    {
+                        yield return enumerator.Current;
+                    }
+                    stack.Pop();
+                }
+            }
+
+            public IEnumerator<string> GetKeyEnumerator(StringBuilder stringBuilder, char separator)
+            {
+                if (isTerminated)
+                {
+                    yield return stringBuilder.ToString();
+                }
+                if (count <= 1) yield break;
+                stringBuilder.Append(separator);
+                foreach (var (key, node) in Children)
+                {
+                    int length = stringBuilder.Length;
+                    stringBuilder.Append(key);
+                    var enumerator = node.GetKeyEnumerator(stringBuilder, separator);
+                    while (enumerator.MoveNext())
+                    {
+                        yield return enumerator.Current;
+                    }
+                    stringBuilder.Length = length;
+                }
+                stringBuilder.Length--;
+            }
+
+            public bool Remove<T>(T prefix) where T : IList<string>
+            {
+                var currentNode = this;
+                for (int i = 0; i < prefix.Count; i++)
+                {
+                    var key = prefix[i];
+                    if (!currentNode.Children.ContainsKey(key)) return false;
+                    var childNode = currentNode.Children[key];
+                    currentNode = childNode;
+                }
+
+                if (!currentNode.isTerminated) return false;
+                currentNode.isTerminated = false;
+
+                currentNode = this;
+                currentNode.count--;
+                for (int i = 0; i < prefix.Count; i++)
+                {
+                    var key = prefix[i];
+                    currentNode = currentNode.Children[key];
+                    currentNode.count--;
+                }
+                return true;
+            }
+
+            public void TraverseCopyKey(Stack<string> stack, char separator, IList<string>[] arr, ref int idx)
+            {
+                if (isTerminated)
+                {
+                    arr[idx] = stack.ToArray();
+                    idx++;
+                    if (count <= 1) return;
+                }
+                foreach (var (key, node) in Children)
+                {
+                    if (node.count == 0) continue;
+                    stack.Push(key);
+                    node.TraverseCopyKey(stack, separator, arr, ref idx);
+                    stack.Pop();
+                }
+            }
+
+            public void TraverseCopyKey(StringBuilder stringBuilder, char separator, IList arr, ref int idx)
+            {
+                if (isTerminated)
+                {
+                    arr[idx] = stringBuilder.ToString();
+                    idx++;
+                    if (count <= 1) return;
+                }
+                stringBuilder.Append(separator);
+                foreach (var (key, node) in Children)
+                {
+                    if (node.count == 0) continue;
+                    var baseLength = stringBuilder.Length;
+                    stringBuilder.Append(key);
+                    node.TraverseCopyKey(stringBuilder, separator, arr, ref idx);
+                    stringBuilder.Length = baseLength;
+                }
+                stringBuilder.Length--;
+            }
+
+            public bool TryGetNode<T>(T prefix, out TNode node) where T : IList<string>
+            {
+                TNode currentNode = (TNode)this;
+                for (int i = 0; i < prefix.Count; i++)
+                {
+                    var key = prefix[i];
+                    if (!currentNode.Children.TryGetValue(key, out currentNode))
+                    {
+                        node = null;
+                        return false;
+                    }
+                }
+                node = currentNode;
+                return node != null;
+            }
+        }
+
+        internal class Node : NodeBase<Node>, INode
+        {
+            public FirstLayerKeyCollection LocalKeys => new FirstLayerKeyCollection(this);
+
+            internal bool Add<T>(T prefix) where T : IList<string>
+            {
+                Node currentNode = this;
+                for (int i = 0; i < prefix.Count; i++)
+                {
+                    var key = prefix[i];
+                    //move to the path
+                    if (currentNode.Children.TryGetValue(key, out var childNode))
+                    {
+                        currentNode = childNode;
+                    }
+                    //current path does not exist, create nodes to create the path
+                    else
+                    {
+                        childNode = new Node();
+                        currentNode.Children.Add(key, childNode);
+                        currentNode = childNode;
+                    }
+                }
+                if (currentNode.isTerminated)
+                {
+                    return false;
+                }
+                currentNode.isTerminated = true;
+                currentNode = this;
+                currentNode.count++;
+                for (int i = 0; i < prefix.Count; i++)
+                {
+                    var key = prefix[i];
+                    currentNode = currentNode.Children[key];
+                    currentNode.count++;
+                }
+
+                return true;
+            }
 
             public Node Clone()
             {
@@ -31,35 +223,116 @@ namespace Minerva.Module
                 {
                     count = count,
                     isTerminated = isTerminated,
-                    children = new()
                 };
 
-                foreach (var item in node.children)
+                foreach (var item in node.Children)
                 {
-                    node.children[item.Key] = item.Value.Clone();
+                    node.Children[item.Key] = item.Value.Clone();
                 }
 
                 return node;
             }
-
-            public void TraverseCopy(StringBuilder stringBuilder, char separator, string[] arr, ref int idx)
-            {
-                foreach (var (key, node) in children)
-                {
-                    var baseLength = stringBuilder.Length;
-                    stringBuilder.Append(key);
-                    if (node.isTerminated)
-                    {
-                        arr[idx] = stringBuilder.ToString();
-                        idx++;
-                    }
-                    stringBuilder.Append(separator);
-                    node.TraverseCopy(stringBuilder, separator, arr, ref idx);
-                    stringBuilder.Length = baseLength;
-                }
-            }
         }
 
+        public readonly struct FirstLayerKeyCollection : ICollection<string>, IEnumerable<string>, IEnumerable, IReadOnlyCollection<string>, ICollection
+        {
+            internal readonly Dictionary<string, Node>.KeyCollection collection;
+
+            public static FirstLayerKeyCollection Empty { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => new FirstLayerKeyCollection(null); }
+
+            public int Count => collection.Count;
+            bool ICollection<string>.IsReadOnly => ((ICollection<string>)collection).IsReadOnly;
+            bool ICollection.IsSynchronized => ((ICollection)collection).IsSynchronized;
+            object ICollection.SyncRoot => ((ICollection)collection).SyncRoot;
+
+
+            internal FirstLayerKeyCollection(Node root) : this()
+            {
+                this.collection = root.Children.Keys;
+            }
+
+            void ICollection<string>.Add(string item) { throw new NotSupportedException(); }
+            void ICollection<string>.Clear() { throw new NotSupportedException(); }
+            bool ICollection<string>.Remove(string item) { throw new NotSupportedException(); }
+            public bool Contains(string item) => ((ICollection<string>)collection).Contains(item);
+            public void CopyTo(string[] array) => collection.CopyTo(array, 0);
+            public void CopyTo(List<string> list) => list.AddRange(collection);
+            public void CopyTo(string[] array, int arrayIndex) => collection.CopyTo(array, arrayIndex);
+            public List<string> ToList() => new List<string>(collection);
+
+            public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)collection).GetEnumerator();
+            IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)collection).GetEnumerator();
+            void ICollection.CopyTo(Array array, int index) => ((ICollection)collection).CopyTo(array, index);
+        }
+
+        public readonly struct KeyCollection : ICollection<string>, IEnumerable<string>, IEnumerable, IReadOnlyCollection<string>, ICollection,
+            ICollection<IList<string>>, IEnumerable<IList<string>>, IReadOnlyCollection<IList<string>>
+        {
+            readonly Node self;
+            readonly char separator;
+
+            public KeyCollection(Trie trie) : this(trie.root, trie.separator) { }
+
+            internal KeyCollection(Node node, char separator) : this()
+            {
+                this.self = node;
+                this.separator = separator;
+            }
+
+            public readonly int Count => self.count;
+            public readonly bool IsReadOnly => true;
+            public readonly bool IsSynchronized => false;
+            public readonly object SyncRoot => this;
+            public readonly void Add(string item) { throw new NotSupportedException(); }
+            public readonly void Clear() { throw new NotSupportedException(); }
+            public readonly bool Remove(string item) { throw new NotSupportedException(); }
+            public readonly void Add(IList<string> item) { throw new NotSupportedException(); }
+            public readonly bool Remove(IList<string> item) { throw new NotSupportedException(); }
+            public readonly bool Contains(string item) => self.ContainsKey(Split(item, separator));
+            public readonly bool Contains(IList<string> item) => self.ContainsKey(item);
+            public readonly void CopyTo(string[] array, int arrayIndex)
+            {
+                int index = arrayIndex;
+                self.TraverseCopyKey(new StringBuilder(), separator, array, ref index);
+            }
+            public readonly void CopyTo(IList<string>[] array, int arrayIndex)
+            {
+                int index = arrayIndex;
+                self.TraverseCopyKey(new Stack<string>(), separator, array, ref index);
+            }
+            public readonly void CopyTo(Array array, int index)
+            {
+                int refIndex = index;
+                if (typeof(IList).IsAssignableFrom(array.GetType().GetElementType()))
+                {
+                    int i = 0;
+                    var enumerator = self.GetKeyEnumerator(new Stack<string>());
+                    while (enumerator.MoveNext())
+                    {
+                        array.SetValue(enumerator.Current, i++);
+                    }
+                    return;
+                }
+                self.TraverseCopyKey(new StringBuilder(), separator, array, ref refIndex);
+            }
+            public readonly void CopyTo(List<string> copyTo)
+            {
+                copyTo.Clear();
+                int index = 0;
+                self.TraverseCopyKey(new StringBuilder(), separator, copyTo, ref index);
+            }
+
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+            public IEnumerator<string> GetEnumerator()
+            {
+                return self.GetKeyEnumerator(new StringBuilder(), separator);
+            }
+            IEnumerator<IList<string>> IEnumerable<IList<string>>.GetEnumerator()
+            {
+                return self.GetKeyEnumerator(new Stack<string>());
+            }
+        }
 
 
         readonly char separator = '.';
@@ -73,19 +346,15 @@ namespace Minerva.Module
 
         public int Count => root.count;
 
-        public ICollection<string> FirstLevelKeys => root.children.Keys.ToList();
+        public FirstLayerKeyCollection FirstLayerKeys => root?.LocalKeys ?? FirstLayerKeyCollection.Empty;
 
-        public string[] Keys
-        {
-            get
-            {
-                string[] arr = new string[Count];
-                CopyTo(arr, 0);
-                return arr;
-            }
-        }
+        public KeyCollection Keys => new KeyCollection(this);
 
         public bool IsReadOnly => false;
+
+        Node ITrie.Root => root;
+
+        public char Separator => separator;
 
         public Trie()
         {
@@ -115,114 +384,47 @@ namespace Minerva.Module
 
         private Trie(Node root, char separator) : this(separator)
         {
-            this.root = root;
+            this.root = root.Clone();
         }
 
 
         void ICollection<string>.Add(string item) => Add(item);
-        public bool Add(string s)
+
+        public bool Add(string s) => Add(Split(s));
+
+        public bool Add<T>(T prefix) where T : IList<string> => root?.Add(prefix) ?? false;
+
+        public void AddRange(IEnumerable<string> ts) { foreach (var item in ts) Add(item); }
+
+        public bool Contains(string s) => Contains(Split(s));
+
+        public bool Contains<T>(T prefix) where T : IList<string> => root?.ContainsKey(prefix) ?? false;
+
+        public bool ContainsPartialKey(string s) => ContainsPartialKey(Split(s));
+
+        public bool ContainsPartialKey<T>(T prefix) where T : IList<string> => root?.ContainsPartialKey(prefix) ?? false;
+
+        public bool Remove(string s) => Remove(Split(s));
+
+        public bool Remove<T>(T prefix) where T : IList<string> => root?.Remove(prefix) ?? false;
+
+        public bool Set(string s, bool value) => value ? Add(s) : Remove(s);
+
+        public bool Set<T>(T s, bool value) where T : IList<string> => value ? Add(s) : Remove(s);
+
+        public void Clear() => root.Clear();
+
+        public bool Clear(string key) => Clear(Split(key));
+
+        public bool Clear<T>(T prefix) where T : IList<string>
         {
-            string[] prefix = GetPrefix(s);
-
-            Node currentNode = root;
-            for (int i = 0; i < prefix.Length; i++)
-            {
-                string key = prefix[i];
-                //move to the path
-                if (currentNode.children.ContainsKey(key))
-                {
-                    currentNode = currentNode.children[key];
-                }
-                //current path does not exist, create nodes to create the path
-                else
-                {
-                    Node newNode = new Node();
-                    currentNode.children.Add(prefix[i], newNode);
-                    currentNode = newNode;
-                }
-            }
-            // already exist
-            if (currentNode.isTerminated)
-            {
-                return false;
-            }
-
-            currentNode.isTerminated = true;
-
-            currentNode = root;
-            currentNode.count++;
-            for (int i = 0; i < prefix.Length; i++)
-            {
-                string key = prefix[i];
-                //move to the path 
-                currentNode = currentNode.children[key];
-                currentNode.count++;
-            }
-            return true;
+            if (!TryGetNode(prefix, out var node)) return false;
+            return node.Clear();
         }
 
-        public void AddRange(IEnumerable<string> ts)
-        {
-            foreach (var item in ts) Add(item);
-        }
+        public void Shrink() => root?.Shrink();
 
-        public bool Contains(string s)
-        {
-            string[] prefix = GetPrefix(s);
-            Node currentNode = root;
 
-            for (int i = 0; i < prefix.Length; i++)
-            {
-                string key = prefix[i];
-                if (!currentNode.children.ContainsKey(key))
-                {
-                    return false;
-                }
-                else
-                {
-                    currentNode = currentNode.children[key];
-                }
-            }
-            return currentNode.isTerminated;
-        }
-
-        public bool Remove(string s)
-        {
-            string[] prefix = GetPrefix(s);
-            Node currentNode = root;
-            for (int i = 0; i < prefix.Length; i++)
-            {
-                string key = prefix[i];
-                if (!currentNode.children.ContainsKey(key)) return false;
-                Node childNode = currentNode.children[key];
-                currentNode = childNode;
-            }
-
-            if (!currentNode.isTerminated) return false;
-            currentNode.isTerminated = false;
-
-            root.count--;
-            currentNode = root;
-            for (int i = 0; i < prefix.Length; i++)
-            {
-                string key = prefix[i];
-                currentNode = currentNode.children[key];
-                currentNode.count--;
-            }
-            return true;
-        }
-
-        public bool Set(string s, bool value)
-        {
-            if (value)
-            {
-                return Add(s);
-            }
-            else
-            {
-                return Remove(s);
-            }
-        }
 
         public Trie GetSubTrie(string s)
         {
@@ -230,15 +432,20 @@ namespace Minerva.Module
             {
                 return new Trie(root, separator);
             }
-            string[] prefix = GetPrefix(s);
+            return GetSubTrie(Split(s));
+        }
+
+        public Trie GetSubTrie<T>(T prefix) where T : IList<string>
+        {
             return TryGetNode(prefix, out var currentNode)
                 ? new Trie(currentNode, separator)
                 : throw new ArgumentException();
         }
 
-        public bool TryGetSubTrie(string s, out Trie trie)
+        public bool TryGetSubTrie(string s, out Trie trie) => TryGetSubTrie(Split(s), out trie);
+
+        public bool TryGetSubTrie<T>(T prefix, out Trie trie) where T : IList<string>
         {
-            string[] prefix = GetPrefix(s);
             if (!TryGetNode(prefix, out Node currentNode))
             {
                 trie = null;
@@ -248,44 +455,15 @@ namespace Minerva.Module
             return true;
         }
 
-        public List<string> GetChildrenKeys()
-        {
-            return root.children.Keys.ToList();
-        }
 
-        private bool TryGetNode(string[] prefix, out Node node)
-        {
-            Node currentNode = root;
-            for (int i = 0; i < prefix.Length; i++)
-            {
-                string key = prefix[i];
-                if (!currentNode.children.TryGetValue(key, out currentNode))
-                {
-                    node = null;
-                    return false;
-                }
-            }
-            node = currentNode;
-            return node != null;
-        }
 
-        private void GetKeys(List<string> list, Node node, StringBuilder sb)
-        {
-            foreach (var item in node.children)
-            {
-                Node child = item.Value;
-                int currentLength = sb.Length;
-                sb.Append(item.Key);
-                if (child.isTerminated)
-                {
-                    int length = sb.Length;
-                    list.Add(sb.ToString());
-                    sb.Length = length;
-                }
-                GetKeys(list, child, sb.Append(separator));
-                sb.Length = currentLength;
-            }
-        }
+
+        bool ITrie.TryGetNode<T>(T prefix, out Node node) => TryGetNode(prefix, out node);
+        private bool TryGetNode<T>(T prefix, out Node node) where T : IList<string> => root?.TryGetNode(prefix, out node) ?? ((node = default) == null && false);
+
+
+
+
 
         public IEnumerator<string> GetEnumerator()
         {
@@ -302,28 +480,17 @@ namespace Minerva.Module
             return GetEnumerator();
         }
 
-        private string[] GetPrefix(string s)
-        {
-            if (s.EndsWith(separator)) return s.Split(separator)[..^1];
-            return s.Split(separator);
-        }
 
-        public void Clear()
-        {
-            root = new Node();
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private string[] Split(string s) => Split(s, separator);
 
-        public bool Clear(string key)
-        {
-            if (!TryGetNode(key.Split(separator), out var node)) return false;
-            node.isTerminated = false;
-            return true;
-        }
 
-        public void CopyTo(string[] array, int arrayIndex)
+
+
+        public void CopyTo(string[] array, int index)
         {
-            int index = arrayIndex;
-            root?.TraverseCopy(new(), separator, array, ref index);
+            int arrayIndex = index;
+            root?.TraverseCopyKey(new(), separator, array, ref arrayIndex);
         }
 
         public Trie Clone()
@@ -336,6 +503,15 @@ namespace Minerva.Module
             string[] arry = new string[Count];
             CopyTo(arry, 0);
             return arry;
+        }
+
+
+
+
+
+        public static string[] Split(string s, char separator)
+        {
+            return string.IsNullOrEmpty(s) ? Array.Empty<string>() : s.Split(separator, StringSplitOptions.RemoveEmptyEntries);
         }
     }
 }
