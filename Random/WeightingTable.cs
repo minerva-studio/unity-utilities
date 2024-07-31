@@ -78,7 +78,20 @@ namespace Minerva.Module.WeightedRandom
             sum += item.Weight;
         }
 
-        public void AddRange<TW>(List<TW> item) where TW : IWeightable<T>
+        public void AddRange<TW>(IEnumerable<TW> items) where TW : IWeightable<T>
+        {
+            if (items is IList<TW> list)
+            {
+                AddRange(list);
+                return;
+            }
+            foreach (var item in items)
+            {
+                Add(item);
+            }
+        }
+
+        public void AddRange<TW>(IList<TW> item) where TW : IWeightable<T>
         {
             for (int i = 0; i < item.Count; i++)
             {
