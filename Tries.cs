@@ -187,7 +187,7 @@ namespace Minerva.Module
                     idx++;
                     if (count <= 1) return;
                 }
-                stringBuilder.Append(separator);
+                if (stringBuilder.Length > 0) stringBuilder.Append(separator);
                 foreach (var (key, node) in Children)
                 {
                     if (node.count == 0) continue;
@@ -196,7 +196,7 @@ namespace Minerva.Module
                     node.TraverseCopy(stringBuilder, separator, arr, ref idx);
                     stringBuilder.Length = baseLength;
                 }
-                stringBuilder.Length--;
+                if (stringBuilder.Length > 0) stringBuilder.Length--;
             }
 
             public void TraverseCopy(Stack<string> stack, char separator, KeyValuePair<IList<string>, TValue>[] arr, ref int idx)
@@ -273,18 +273,19 @@ namespace Minerva.Module
 
             private void ToDictionary(StringBuilder stringBuilder, Dictionary<string, TValue> dictionary, char separator)
             {
+                if (this.isTerminated)
+                {
+                    dictionary[stringBuilder.ToString()] = value;
+                }
+                if (stringBuilder.Length > 0) stringBuilder.Append(separator);
                 foreach (var (key, node) in Children)
                 {
                     var baseLength = stringBuilder.Length;
                     stringBuilder.Append(key);
-                    if (node.isTerminated)
-                    {
-                        dictionary[stringBuilder.ToString()] = node.value;
-                    }
-                    stringBuilder.Append(separator);
                     ToDictionary(stringBuilder, dictionary, separator);
                     stringBuilder.Length = baseLength;
                 }
+                if (stringBuilder.Length > 0) stringBuilder.Length--;
             }
         }
 
@@ -368,12 +369,6 @@ namespace Minerva.Module
                     return;
                 }
                 self.TraverseCopyKey(new StringBuilder(), separator, array, ref refIndex);
-            }
-            public readonly void CopyTo(List<string> copyTo)
-            {
-                copyTo.Clear();
-                int index = 0;
-                self.TraverseCopyKey(new StringBuilder(), separator, copyTo, ref index);
             }
 
 

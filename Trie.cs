@@ -83,7 +83,7 @@ namespace Minerva.Module
                     yield return stringBuilder.ToString();
                 }
                 if (count <= 1) yield break;
-                stringBuilder.Append(separator);
+                if (stringBuilder.Length > 0) stringBuilder.Append(separator);
                 foreach (var (key, node) in Children)
                 {
                     int length = stringBuilder.Length;
@@ -95,7 +95,7 @@ namespace Minerva.Module
                     }
                     stringBuilder.Length = length;
                 }
-                stringBuilder.Length--;
+                if (stringBuilder.Length > 0) stringBuilder.Length--;
             }
 
             public bool Remove<T>(T prefix) where T : IList<string>
@@ -148,7 +148,7 @@ namespace Minerva.Module
                     idx++;
                     if (count <= 1) return;
                 }
-                stringBuilder.Append(separator);
+                if (stringBuilder.Length > 0) stringBuilder.Append(separator);
                 foreach (var (key, node) in Children)
                 {
                     if (node.count == 0) continue;
@@ -157,7 +157,7 @@ namespace Minerva.Module
                     node.TraverseCopyKey(stringBuilder, separator, arr, ref idx);
                     stringBuilder.Length = baseLength;
                 }
-                stringBuilder.Length--;
+                if (stringBuilder.Length > 0) stringBuilder.Length--;
             }
 
             public bool TryGetNode<T>(T prefix, out TNode node) where T : IList<string>
