@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Minerva.Module
 {
@@ -10,12 +9,20 @@ namespace Minerva.Module
 
         bool ContainsPartialKey(string s);
         bool ContainsPartialKey<T>(T prefix) where T : IList<string>;
-        string[] Split(string s) => Trie.Split(s, Separator);
     }
 
     public static class TrieExtensions
     {
-        public static TrieSegment GetSegment<T>(this T trie, string s) where T : ITrie => string.IsNullOrEmpty(s) ? new TrieSegment(trie.Root, trie.Separator) : GetSegment(trie, trie.Split(s));
+        public static TrieSegment GetSegment<T>(this T trie, string s) where T : ITrie
+        {
+            if (string.IsNullOrEmpty(s))
+            {
+                return new TrieSegment(trie.Root, trie.Separator);
+            }
+            return trie.TryGetNode(s, out var currentNode)
+                ? new TrieSegment(currentNode, trie.Separator)
+                : throw new ArgumentException();
+        }
 
         public static TrieSegment GetSegment<TTrie, TPrefix>(this TTrie trie, TPrefix prefix) where TPrefix : IList<string> where TTrie : ITrie
         {
@@ -24,7 +31,16 @@ namespace Minerva.Module
                 : throw new ArgumentException();
         }
 
-        public static bool TryGetSegment<T>(this T self, string s, out TrieSegment trie) where T : ITrie => TryGetSegment(self, self.Split(s), out trie);
+        public static bool TryGetSegment<T>(this T self, string s, out TrieSegment trie) where T : ITrie
+        {
+            if (!self.TryGetNode(s, out Trie.Node currentNode))
+            {
+                trie = default;
+                return false;
+            }
+            trie = new TrieSegment(currentNode, self.Separator);
+            return true;
+        }
 
         public static bool TryGetSegment<T, TPrefix>(this T self, TPrefix prefix, out TrieSegment trie) where TPrefix : IList<string> where T : ITrie
         {
@@ -45,7 +61,13 @@ namespace Minerva.Module
 
         public static TriesSegment<TValue> GetSegment<TValue>(this TriesSegment<TValue> trie, string s) => GetSegment<TriesSegment<TValue>, TValue>(trie, s);
 
-        public static TriesSegment<TValue> GetSegment<T, TValue>(this T trie, string s) where T : ITries<TValue> => string.IsNullOrEmpty(s) ? new TriesSegment<TValue>(trie.Root, trie.Separator) : GetSegment<T, TValue, string[]>(trie, trie.Split(s));
+        public static TriesSegment<TValue> GetSegment<T, TValue>(this T trie, string s) where T : ITries<TValue>
+        {
+            if (string.IsNullOrEmpty(s)) return new TriesSegment<TValue>(trie.Root, trie.Separator);
+            return trie.TryGetNode(s, out var currentNode)
+                ? new TriesSegment<TValue>(currentNode, trie.Separator)
+                : throw new ArgumentException();
+        }
 
         public static TriesSegment<TValue> GetSegment<TValue, TPrefix>(this Tries<TValue> trie, TPrefix s) where TPrefix : IList<string> => GetSegment<Tries<TValue>, TValue, TPrefix>(trie, s);
 
@@ -62,7 +84,16 @@ namespace Minerva.Module
 
         public static bool TryGetSegment<TValue>(this in TriesSegment<TValue> self, string s, out TriesSegment<TValue> trie) => TryGetSegment<TriesSegment<TValue>, TValue>(self, s, out trie);
 
-        public static bool TryGetSegment<T, TValue>(this T self, string s, out TriesSegment<TValue> trie) where T : ITries<TValue> => TryGetSegment(self, self.Split(s), out trie);
+        public static bool TryGetSegment<T, TValue>(this T self, string s, out TriesSegment<TValue> trie) where T : ITries<TValue>
+        {
+            if (!self.TryGetNode(s, out Tries<TValue>.Node currentNode))
+            {
+                trie = default;
+                return false;
+            }
+            trie = new TriesSegment<TValue>(currentNode, self.Separator);
+            return true;
+        }
 
         public static bool TryGetSegment<TValue, TPrefix>(this Tries<TValue> self, TPrefix prefix, out TriesSegment<TValue> trie) where TPrefix : IList<string> => TryGetSegment<Tries<TValue>, TValue, TPrefix>(self, prefix, out trie);
 

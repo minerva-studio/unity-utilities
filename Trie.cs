@@ -3,26 +3,101 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Minerva.Module
 {
     public class Trie : ITrie, IEnumerable<string>, IEnumerable, ICollection<string>
     {
+        class CharsComparer : IEqualityComparer<ReadOnlyMemory<char>>
+        {
+            public bool Equals(ReadOnlyMemory<char> x, ReadOnlyMemory<char> y)
+            {
+                var xSpan = x.Span;
+                var ySpan = y.Span;
+
+                return xSpan.SequenceEqual(ySpan);
+            }
+
+            public int GetHashCode(ReadOnlyMemory<char> obj)
+            {
+                var hash = new HashCode();
+                ReadOnlySpan<char> span = obj.Span;
+                for (int i = 0; i < span.Length; i++)
+                {
+                    hash.Add(span[i]);
+                }
+                return hash.ToHashCode();
+            }
+        }
+
+        internal ref struct StringKey
+        {
+            public string key;
+            Span<int> indice;
+
+            public StringKey(string key, Span<int> indice)
+            {
+                this.key = key;
+                this.indice = indice;
+            }
+
+            public int Count => indice.Length;
+            public ReadOnlyMemory<char> this[int index]
+            {
+                get
+                {
+                    int start = indice[index] + 1;
+                    int end = index == Count - 1 ? key.Length : indice[index + 1];
+                    return key.AsMemory(start, end - start);
+                }
+            }
+        }
+
+        internal ref struct KeyPointer
+        {
+            int mode;
+            public IList<string> keys;
+            public IList<ReadOnlyMemory<char>> keys2;
+            public StringKey readOnlyMemories;
+
+            private KeyPointer(int mode) : this() { this.mode = mode; }
+            public KeyPointer(IList<string> keys) : this(1) { this.keys = keys; }
+            public KeyPointer(IList<ReadOnlyMemory<char>> keys2) : this(2) { this.keys2 = keys2; }
+            public KeyPointer(StringKey readOnlyMemories) : this(3) { this.readOnlyMemories = readOnlyMemories; }
+
+            public readonly int Count => mode switch
+            {
+                1 => keys.Count,
+                2 => keys2.Count,
+                3 => readOnlyMemories.Count,
+                _ => throw new NotSupportedException(),
+            };
+
+            public readonly ReadOnlyMemory<char> this[int index] => mode switch
+            {
+                1 => keys[index].AsMemory(),
+                2 => keys2[index],
+                3 => readOnlyMemories[index],
+                _ => throw new NotSupportedException(),
+            };
+        }
+
         internal interface INode
         {
             public bool Clear();
-            public bool ContainsKey<T>(T prefix) where T : IList<string>;
         }
 
         internal class NodeBase<TNode> : INode where TNode : NodeBase<TNode>, INode
         {
-            protected Dictionary<string, TNode> children;
+            protected Dictionary<ReadOnlyMemory<char>, TNode> children;
             public int count;
             public bool isTerminated;
 
-            public Dictionary<string, TNode> Children { get => children ??= new(); }
+            public Dictionary<ReadOnlyMemory<char>, TNode> Children { get => children ??= new(new CharsComparer()); }
             public int LocalCount => children?.Count ?? 0;
 
             public bool Clear()
@@ -33,9 +108,59 @@ namespace Minerva.Module
                 return count > 0;
             }
 
-            public bool ContainsKey<T>(T prefix) where T : IList<string> => TryGetNode(prefix, out var node) && node.isTerminated;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal bool ContainsKey(string s, char separator)
+            {
+                int count = GetSeperatorCount(s, separator);
+                Span<int> indices = stackalloc int[count + 1];
+                var key = GetStringKey(s, separator, indices);
+                return ContainsKey(key);
+            }
 
-            public bool ContainsPartialKey<T>(T prefix) where T : IList<string> => TryGetNode(prefix, out var node) && node.count > 0;
+            internal bool ContainsKey(KeyPointer prefix) => TryGetNode(prefix, out var node) && node.isTerminated;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal bool ContainsPartialKey(string s, char separator)
+            {
+                int count = GetSeperatorCount(s, separator);
+                Span<int> indices = stackalloc int[count + 1];
+                var key = GetStringKey(s, separator, indices);
+                return ContainsPartialKey(key);
+            }
+
+            internal bool ContainsPartialKey(KeyPointer prefix) => TryGetNode(prefix, out var node) && (node.count > 0 || node.isTerminated);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal bool Remove(string s, char separator)
+            {
+                int count = GetSeperatorCount(s, separator);
+                Span<int> indices = stackalloc int[count + 1];
+                var key = GetStringKey(s, separator, indices);
+                return Remove(key);
+            }
+
+            internal bool Remove(KeyPointer prefix)
+            {
+                var currentNode = this;
+                for (int i = 0; i < prefix.Count; i++)
+                {
+                    var key = prefix[i];
+                    if (!currentNode.Children.TryGetValue(key, out var childNode)) return false;
+                    currentNode = childNode;
+                }
+                if (!currentNode.isTerminated) return false;
+
+                currentNode.isTerminated = false;
+                currentNode = this;
+                currentNode.count--;
+                for (int i = 0; i < prefix.Count; i++)
+                {
+                    var key = prefix[i];
+                    currentNode = currentNode.Children[key];
+                    currentNode.count--;
+                }
+                return true;
+            }
 
             /// <summary>
             /// Shrink the trie
@@ -66,7 +191,7 @@ namespace Minerva.Module
                 if (count <= 1) yield break;
                 foreach (var (key, node) in Children)
                 {
-                    stack.Push(key);
+                    stack.Push(key.ToString());
                     var enumerator = node.GetKeyEnumerator(stack);
                     while (enumerator.MoveNext())
                     {
@@ -98,31 +223,6 @@ namespace Minerva.Module
                 if (stringBuilder.Length > 0) stringBuilder.Length--;
             }
 
-            public bool Remove<T>(T prefix) where T : IList<string>
-            {
-                var currentNode = this;
-                for (int i = 0; i < prefix.Count; i++)
-                {
-                    var key = prefix[i];
-                    if (!currentNode.Children.ContainsKey(key)) return false;
-                    var childNode = currentNode.Children[key];
-                    currentNode = childNode;
-                }
-
-                if (!currentNode.isTerminated) return false;
-                currentNode.isTerminated = false;
-
-                currentNode = this;
-                currentNode.count--;
-                for (int i = 0; i < prefix.Count; i++)
-                {
-                    var key = prefix[i];
-                    currentNode = currentNode.Children[key];
-                    currentNode.count--;
-                }
-                return true;
-            }
-
             public void TraverseCopyKey(Stack<string> stack, char separator, IList<string>[] arr, ref int idx)
             {
                 if (isTerminated)
@@ -134,7 +234,7 @@ namespace Minerva.Module
                 foreach (var (key, node) in Children)
                 {
                     if (node.count == 0) continue;
-                    stack.Push(key);
+                    stack.Push(key.ToString());
                     node.TraverseCopyKey(stack, separator, arr, ref idx);
                     stack.Pop();
                 }
@@ -160,7 +260,15 @@ namespace Minerva.Module
                 if (stringBuilder.Length > 0) stringBuilder.Length--;
             }
 
-            public bool TryGetNode<T>(T prefix, out TNode node) where T : IList<string>
+            internal bool TryGetNode(string s, char separator, out TNode node)
+            {
+                int count = GetSeperatorCount(s, separator);
+                Span<int> indices = stackalloc int[count + 1];
+                var key = GetStringKey(s, separator, indices);
+                return TryGetNode(key, out node);
+            }
+
+            internal bool TryGetNode(KeyPointer prefix, out TNode node)
             {
                 TNode currentNode = (TNode)this;
                 for (int i = 0; i < prefix.Count; i++)
@@ -181,7 +289,15 @@ namespace Minerva.Module
         {
             public FirstLayerKeyCollection LocalKeys => new FirstLayerKeyCollection(this);
 
-            internal bool Add<T>(T prefix) where T : IList<string>
+            internal bool Add(string s, char separator)
+            {
+                int count = GetSeperatorCount(s, separator);
+                Span<int> indices = stackalloc int[count + 1];
+                var key = GetStringKey(s, separator, indices);
+                return Add(key);
+            }
+
+            internal bool Add(KeyPointer prefix)
             {
                 Node currentNode = this;
                 for (int i = 0; i < prefix.Count; i++)
@@ -234,14 +350,15 @@ namespace Minerva.Module
             }
         }
 
-        public readonly struct FirstLayerKeyCollection : ICollection<string>, IEnumerable<string>, IEnumerable, IReadOnlyCollection<string>, ICollection
+        public readonly struct FirstLayerKeyCollection : ICollection<ReadOnlyMemory<char>>, IEnumerable<ReadOnlyMemory<char>>, IReadOnlyCollection<ReadOnlyMemory<char>>, ICollection<string>, IEnumerable<string>, IReadOnlyCollection<string>, IEnumerable, ICollection
         {
-            internal readonly Dictionary<string, Node>.KeyCollection collection;
+            internal readonly Dictionary<ReadOnlyMemory<char>, Node>.KeyCollection collection;
 
             public static FirstLayerKeyCollection Empty { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => new FirstLayerKeyCollection(null); }
 
             public int Count => collection.Count;
-            bool ICollection<string>.IsReadOnly => ((ICollection<string>)collection).IsReadOnly;
+            bool ICollection<string>.IsReadOnly => ((ICollection<ReadOnlyMemory<char>>)collection).IsReadOnly;
+            bool ICollection<ReadOnlyMemory<char>>.IsReadOnly => ((ICollection<ReadOnlyMemory<char>>)collection).IsReadOnly;
             bool ICollection.IsSynchronized => ((ICollection)collection).IsSynchronized;
             object ICollection.SyncRoot => ((ICollection)collection).SyncRoot;
 
@@ -251,16 +368,28 @@ namespace Minerva.Module
                 this.collection = root.Children.Keys;
             }
 
-            void ICollection<string>.Add(string item) { throw new NotSupportedException(); }
-            void ICollection<string>.Clear() { throw new NotSupportedException(); }
-            bool ICollection<string>.Remove(string item) { throw new NotSupportedException(); }
-            public bool Contains(string item) => ((ICollection<string>)collection).Contains(item);
-            public void CopyTo(string[] array) => collection.CopyTo(array, 0);
-            public void CopyTo(List<string> list) => list.AddRange(collection);
-            public void CopyTo(string[] array, int arrayIndex) => collection.CopyTo(array, arrayIndex);
-            public List<string> ToList() => new List<string>(collection);
+            void ICollection<string>.Add(string item) => throw new NotSupportedException();
+            void ICollection<string>.Clear() => throw new NotSupportedException();
+            bool ICollection<string>.Remove(string item) => throw new NotSupportedException();
+            void ICollection<ReadOnlyMemory<char>>.Add(ReadOnlyMemory<char> item) => throw new NotSupportedException();
+            void ICollection<ReadOnlyMemory<char>>.Clear() => throw new NotSupportedException();
+            bool ICollection<ReadOnlyMemory<char>>.Remove(ReadOnlyMemory<char> item) => throw new NotSupportedException();
 
-            public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)collection).GetEnumerator();
+
+            public bool Contains(string item) => ((ICollection<ReadOnlyMemory<char>>)collection).Contains(item.AsMemory());
+            public bool Contains(ReadOnlyMemory<char> item) => ((ICollection<ReadOnlyMemory<char>>)collection).Contains(item);
+            public void CopyTo(ReadOnlyMemory<char>[] array) => collection.CopyTo(array, 0);
+            public void CopyTo(ReadOnlyMemory<char>[] array, int arrayIndex) => collection.CopyTo(array, arrayIndex);
+            public void CopyTo(string[] array) => CopyTo(array, 0);
+            public void CopyTo(string[] array, int arrayIndex) { foreach (var item in this) array[arrayIndex++] = item; }
+            public List<string> ToList() => new List<string>(collection.Select(m => m.ToString()));
+
+
+            public IEnumerator<string> GetEnumerator()
+            {
+                foreach (var item in (IEnumerable<ReadOnlyMemory<char>>)this) yield return item.ToString();
+            }
+            IEnumerator<ReadOnlyMemory<char>> IEnumerable<ReadOnlyMemory<char>>.GetEnumerator() => ((IEnumerable<ReadOnlyMemory<char>>)collection).GetEnumerator();
             IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)collection).GetEnumerator();
             void ICollection.CopyTo(Array array, int index) => ((ICollection)collection).CopyTo(array, index);
         }
@@ -288,8 +417,6 @@ namespace Minerva.Module
             public readonly bool Remove(string item) { throw new NotSupportedException(); }
             public readonly void Add(IList<string> item) { throw new NotSupportedException(); }
             public readonly bool Remove(IList<string> item) { throw new NotSupportedException(); }
-            public readonly bool Contains(string item) => self.ContainsKey(Split(item, separator));
-            public readonly bool Contains(IList<string> item) => self.ContainsKey(item);
             public readonly void CopyTo(string[] array, int arrayIndex)
             {
                 int index = arrayIndex;
@@ -321,7 +448,8 @@ namespace Minerva.Module
                 int index = 0;
                 self.TraverseCopyKey(new StringBuilder(), separator, copyTo, ref index);
             }
-
+            public readonly bool Contains(string item) => self.ContainsKey(item, separator);
+            public readonly bool Contains(IList<string> item) => self.ContainsKey(new KeyPointer(item));
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
             public IEnumerator<string> GetEnumerator()
@@ -390,23 +518,23 @@ namespace Minerva.Module
 
         void ICollection<string>.Add(string item) => Add(item);
 
-        public bool Add(string s) => Add(Split(s));
+        public bool Add(string s) => root?.Add(s, separator) ?? false;
 
-        public bool Add<T>(T prefix) where T : IList<string> => root?.Add(prefix) ?? false;
+        public bool Add<T>(T prefix) where T : IList<string> => root?.Add(new KeyPointer(prefix)) ?? false;
 
         public void AddRange(IEnumerable<string> ts) { foreach (var item in ts) Add(item); }
 
-        public bool Contains(string s) => Contains(Split(s));
+        public bool Contains(string s) => root?.ContainsKey(s, separator) ?? false;
 
-        public bool Contains<T>(T prefix) where T : IList<string> => root?.ContainsKey(prefix) ?? false;
+        public bool Contains<T>(T prefix) where T : IList<string> => root?.ContainsKey(new KeyPointer(prefix)) ?? false;
 
-        public bool ContainsPartialKey(string s) => ContainsPartialKey(Split(s));
+        public bool ContainsPartialKey(string s) => root?.ContainsPartialKey(s, separator) ?? false;
 
-        public bool ContainsPartialKey<T>(T prefix) where T : IList<string> => root?.ContainsPartialKey(prefix) ?? false;
+        public bool ContainsPartialKey<T>(T prefix) where T : IList<string> => root?.ContainsPartialKey(new KeyPointer(prefix)) ?? false;
 
-        public bool Remove(string s) => Remove(Split(s));
+        public bool Remove(string s) => root?.Remove(s, separator) ?? false;
 
-        public bool Remove<T>(T prefix) where T : IList<string> => root?.Remove(prefix) ?? false;
+        public bool Remove<T>(T prefix) where T : IList<string> => root?.Remove(new(prefix)) ?? false;
 
         public bool Set(string s, bool value) => value ? Add(s) : Remove(s);
 
@@ -414,7 +542,11 @@ namespace Minerva.Module
 
         public void Clear() => root.Clear();
 
-        public bool Clear(string key) => Clear(Split(key));
+        public bool Clear(string key)
+        {
+            if (!TryGetNode(key, out var node)) return false;
+            return node.Clear();
+        }
 
         public bool Clear<T>(T prefix) where T : IList<string>
         {
@@ -432,7 +564,9 @@ namespace Minerva.Module
             {
                 return new Trie(root, separator);
             }
-            return GetSubTrie(Split(s));
+            return TryGetNode(s, out var currentNode)
+                ? new Trie(currentNode, separator)
+                : throw new ArgumentException();
         }
 
         public Trie GetSubTrie<T>(T prefix) where T : IList<string>
@@ -442,7 +576,16 @@ namespace Minerva.Module
                 : throw new ArgumentException();
         }
 
-        public bool TryGetSubTrie(string s, out Trie trie) => TryGetSubTrie(Split(s), out trie);
+        public bool TryGetSubTrie(string s, out Trie trie)
+        {
+            if (!TryGetNode(s, out Node currentNode))
+            {
+                trie = null;
+                return false;
+            }
+            trie = new Trie(currentNode, separator);
+            return true;
+        }
 
         public bool TryGetSubTrie<T>(T prefix, out Trie trie) where T : IList<string>
         {
@@ -459,7 +602,9 @@ namespace Minerva.Module
 
 
         bool ITrie.TryGetNode<T>(T prefix, out Node node) => TryGetNode(prefix, out node);
-        private bool TryGetNode<T>(T prefix, out Node node) where T : IList<string> => root?.TryGetNode(prefix, out node) ?? ((node = default) == null && false);
+        bool ITrie.TryGetNode(string prefix, out Node node) => TryGetNode(prefix, out node);
+        private bool TryGetNode<T>(T prefix, out Node node) where T : IList<string> => root?.TryGetNode(new KeyPointer(prefix), out node) ?? ((node = default) == null && false);
+        private bool TryGetNode(string s, out Node node) => root?.TryGetNode(s, separator, out node) ?? ((node = default) == null && false);
 
 
 
@@ -480,9 +625,6 @@ namespace Minerva.Module
             return GetEnumerator();
         }
 
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private string[] Split(string s) => Split(s, separator);
 
 
 
@@ -509,9 +651,29 @@ namespace Minerva.Module
 
 
 
-        public static string[] Split(string s, char separator)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static int GetSeperatorCount(string s, char separator)
         {
-            return string.IsNullOrEmpty(s) ? Array.Empty<string>() : s.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            int count = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == separator) count++;
+            }
+
+            return count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static KeyPointer GetStringKey(string s, char separator, Span<int> indices)
+        {
+            indices[0] = -1;
+            int index = 1;
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == separator) indices[index++] = i;
+            }
+            return new KeyPointer(new StringKey(s, indices));
         }
     }
 }

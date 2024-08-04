@@ -4,12 +4,14 @@ using System.Runtime.CompilerServices;
 using Node = Minerva.Module.Trie.Node;
 using FirstLayerKeyCollection = Minerva.Module.Trie.FirstLayerKeyCollection;
 using KeyCollection = Minerva.Module.Trie.KeyCollection;
+using static Minerva.Module.Trie;
 
 namespace Minerva.Module
 {
     public interface ITrie : ITrieBase, IEnumerable<string>, IEnumerable, ICollection<string>
     {
         internal Node Root { get; }
+        internal bool TryGetNode(string prefix, out Node currentNode);
         internal bool TryGetNode<T>(T prefix, out Node currentNode) where T : IList<string>;
     }
 
@@ -45,23 +47,23 @@ namespace Minerva.Module
 
         void ICollection<string>.Add(string item) => Add(item);
 
-        public readonly bool Add(string s) => Add(Split(s));
+        public readonly bool Add(string s) => root?.Add(s, separator) ?? false;
 
-        public readonly bool Add<T>(T prefix) where T : IList<string> => root?.Add(prefix) ?? false;
+        public readonly bool Add<T>(T prefix) where T : IList<string> => root?.Add(new KeyPointer(prefix)) ?? false;
 
         public readonly void AddRange(IEnumerable<string> ts) { foreach (var item in ts) Add(item); }
 
         public readonly bool Contains(string s) => Contains(Split(s));
 
-        public readonly bool Contains<T>(T prefix) where T : IList<string> => root?.ContainsKey(prefix) ?? false;
+        public readonly bool Contains<T>(T prefix) where T : IList<string> => root?.ContainsKey(new KeyPointer(prefix)) ?? false;
 
         public readonly bool ContainsPartialKey(string s) => ContainsPartialKey(Split(s));
 
-        public readonly bool ContainsPartialKey<T>(T prefix) where T : IList<string> => root?.ContainsPartialKey(prefix) ?? false;
+        public readonly bool ContainsPartialKey<T>(T prefix) where T : IList<string> => root?.ContainsPartialKey(new KeyPointer(prefix)) ?? false;
 
         public readonly bool Remove(string s) => Remove(Split(s));
 
-        public readonly bool Remove<T>(T prefix) where T : IList<string> => root?.Remove(prefix) ?? false;
+        public readonly bool Remove<T>(T prefix) where T : IList<string> => root?.Remove(new(prefix)) ?? false;
 
         public readonly bool Set(string s, bool value) => value ? Add(s) : Remove(s);
 
@@ -84,8 +86,10 @@ namespace Minerva.Module
 
 
 
-        bool ITrie.TryGetNode<T>(T prefix, out Node node) => TryGetNode(prefix, out node);
-        private readonly bool TryGetNode<T>(T prefix, out Node node) where T : IList<string> => root?.TryGetNode(prefix, out node) ?? ((node = default) == null && false);
+        readonly bool ITrie.TryGetNode<T>(T prefix, out Node node) => TryGetNode(prefix, out node);
+        readonly bool ITrie.TryGetNode(string prefix, out Node node) => TryGetNode(prefix, out node);
+        private readonly bool TryGetNode<T>(T prefix, out Node node) where T : IList<string> => root?.TryGetNode(new KeyPointer(prefix), out node) ?? ((node = default) == null && false);
+        private readonly bool TryGetNode(string s, out Node node) => root?.TryGetNode(s, separator, out node) ?? ((node = default) == null && false);
 
 
 
