@@ -53,6 +53,11 @@ namespace Minerva.Module.WeightedRandom
                 && this.weight == weight.weight;
         }
 
+        public readonly override int GetHashCode()
+        {
+            return HashCode.Combine(item, weight);
+        }
+
         public static bool operator ==(Weight<T> left, Weight<T> right)
         {
             return left.Equals(right);

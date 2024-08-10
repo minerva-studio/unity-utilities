@@ -117,19 +117,22 @@ namespace Minerva.Module
 
         public readonly void Set<T>(T prefix, TValue value) where T : IList<string> => root?.Set(new(prefix), value);
 
-        public readonly void Clear() => root?.Clear();
+        public readonly void Clear() => Clear(false);
 
-        public readonly bool Clear(string key)
+        public readonly void Clear(bool keepStructure) => root?.Clear(keepStructure);
+
+        public readonly bool Clear(string key, bool keepStructure = false)
         {
             if (!TryGetNode(key, out var node)) return false;
-            return node.Clear();
+            return node.Clear(keepStructure);
         }
 
-        public readonly bool Clear<T>(T key) where T : IList<string>
+        public bool Clear<T>(T prefix, bool keepStructure = false) where T : IList<string>
         {
-            if (!TryGetNode(key, out var node)) return false;
-            return node.Clear();
+            if (!TryGetNode(prefix, out var node)) return false;
+            return node.Clear(keepStructure);
         }
+
 
         public readonly bool Remove(KeyValuePair<string, TValue> item) => root?.Remove(item.Key, separator, item.Value) ?? false;
 

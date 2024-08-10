@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEditor;
+using UnityEngine;
 
 namespace Minerva.Module
 {
@@ -173,18 +174,37 @@ namespace Minerva.Module
             {
                 sb.Append(item.Name);
                 sb.Append(CSV_SEPARATOR);
-                var entries = string.Join(
-                    CSV_SEPARATOR,
-                    item.Select(
-                        text => !text.Contains("\"") && !text.Contains(",")
-                        ? text
-                        : $"\"{text.Replace("\"", "\"\"")}\""
-                        )
-                );
-                sb.Append(entries);
+                sb.AppendJoin(CSV_SEPARATOR, table.ColumnNames.Select(r => item[r]).Select(
+                        text => text.Contains('"') || text.Contains(',')
+                        ? $"\"{ToProperyString(text)}\""
+                        : text));
                 sb.Append("\n");
             }
+
             return sb.ToString();
+        }
+
+        private static string ToProperyString(string text)
+        {
+            StringBuilder builder = new StringBuilder();
+            foreach (char c in text)
+            {
+                switch (c)
+                {
+                    case '\r':
+                        continue;
+                    case '\n':
+                        builder.Append("\\n");
+                        break;
+                    case '"':
+                        builder.Append('"', 2);
+                        break;
+                    default:
+                        builder.Append(c);
+                        break;
+                }
+            }
+            return builder.ToString();
         }
 
         public static CSVFile Import(string path)

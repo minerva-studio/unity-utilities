@@ -65,6 +65,12 @@ namespace Minerva.Module
             return $"<color={colorCode}>{str}</color>";
         }
 
+        public static string UGUIColor(this string str, Color color)
+        {
+            string colorHex = color.a == 1 ? ColorUtility.ToHtmlStringRGB(color) : ColorUtility.ToHtmlStringRGBA(color);
+            return str.UGUIColor($"#{colorHex}");
+        }
+
         public static string ToTitleCase(this string text)
         {
             if (string.IsNullOrEmpty(text))

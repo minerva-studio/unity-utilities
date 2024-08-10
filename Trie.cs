@@ -14,6 +14,8 @@ namespace Minerva.Module
     {
         class CharsComparer : IEqualityComparer<ReadOnlyMemory<char>>
         {
+            public static CharsComparer Default = new CharsComparer();
+
             public bool Equals(ReadOnlyMemory<char> x, ReadOnlyMemory<char> y)
             {
                 var xSpan = x.Span;
@@ -97,7 +99,7 @@ namespace Minerva.Module
             public int count;
             public bool isTerminated;
 
-            public Dictionary<ReadOnlyMemory<char>, TNode> Children { get => children ??= new(new CharsComparer()); }
+            public Dictionary<ReadOnlyMemory<char>, TNode> Children { get => children ??= new(CharsComparer.Default); }
             public int LocalCount => children?.Count ?? 0;
 
             public bool Clear()
@@ -105,7 +107,22 @@ namespace Minerva.Module
                 int count = this.count;
                 Children.Clear();
                 this.count = 0;
+                this.isTerminated = false;
                 return count > 0;
+            }
+
+            public bool Clear(bool keepStruct)
+            {
+                if (!keepStruct) return Clear();
+                var localCount = this.count;
+                count = 0;
+                isTerminated = false;
+                if (children != null)
+                    foreach (var item in children)
+                    {
+                        item.Value.Clear(true);
+                    }
+                return localCount > 0;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -540,18 +557,20 @@ namespace Minerva.Module
 
         public bool Set<T>(T s, bool value) where T : IList<string> => value ? Add(s) : Remove(s);
 
-        public void Clear() => root.Clear();
+        public void Clear() => root?.Clear();
 
-        public bool Clear(string key)
+        public void Clear(bool keepStructure) => root?.Clear(keepStructure);
+
+        public bool Clear(string key, bool keepStructure = false)
         {
             if (!TryGetNode(key, out var node)) return false;
-            return node.Clear();
+            return node.Clear(keepStructure);
         }
 
-        public bool Clear<T>(T prefix) where T : IList<string>
+        public bool Clear<T>(T prefix, bool keepStructure = false) where T : IList<string>
         {
             if (!TryGetNode(prefix, out var node)) return false;
-            return node.Clear();
+            return node.Clear(keepStructure);
         }
 
         public void Shrink() => root?.Shrink();
