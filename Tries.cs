@@ -4,9 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using KeyPointer = Minerva.Module.Trie.KeyPointer;
-using StringKey = Minerva.Module.Trie.StringKey;
 using static Minerva.Module.Trie;
+using KeyPointer = Minerva.Module.Trie.KeyPointer;
 
 namespace Minerva.Module
 {

@@ -9,8 +9,9 @@ namespace Minerva.Module.Editor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
-            //            position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
-            EditorGUI.PropertyField(position, property.FindPropertyRelative("value"), label);
+            SerializedProperty valueProperty = property.FindPropertyRelative("value");
+            EditorGUI.PropertyField(position, valueProperty, label);
+            property.boxedValue = new UUID(valueProperty.stringValue);
             EditorGUI.EndProperty();
         }
     }

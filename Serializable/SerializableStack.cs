@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 namespace Minerva.Module
 {
+
     [Obsolete]
     [Serializable]
     public class SerializableStack<T> : IEnumerable<T>, IEnumerable, IReadOnlyCollection<T>, ICollection

@@ -1,10 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Node = Minerva.Module.Trie.Node;
+using static Minerva.Module.Trie;
 using FirstLayerKeyCollection = Minerva.Module.Trie.FirstLayerKeyCollection;
 using KeyCollection = Minerva.Module.Trie.KeyCollection;
-using static Minerva.Module.Trie;
+using Node = Minerva.Module.Trie.Node;
 
 namespace Minerva.Module
 {
