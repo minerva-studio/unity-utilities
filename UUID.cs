@@ -26,7 +26,15 @@ namespace Minerva.Module
         public UUID(string value)
         {
             this.value = value;
-            this.guid = new Guid(value);
+            try
+            {
+                this.guid = string.IsNullOrEmpty(value) ? Guid.Empty : new Guid(value);
+            }
+            catch (Exception)
+            {
+                this.guid = Guid.Empty;
+                this.value = Empty.Value;
+            }
         }
 
         public UUID(Guid value)
