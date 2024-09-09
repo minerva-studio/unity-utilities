@@ -94,6 +94,13 @@ namespace Minerva.Module
             c.Remove(obj);
             return c;
         }
+
+        public static bool operator >(Counter c, int count) => c.Count > count;
+        public static bool operator <(Counter c, int count) => c.Count < count;
+        public static bool operator ==(Counter c, int count) => c.Count == count;
+        public static bool operator !=(Counter c, int count) => !(c == count);
+        public static bool operator >=(Counter c, int count) => !(c < count);
+        public static bool operator <=(Counter c, int count) => !(c > count);
     }
 
 
@@ -184,5 +191,12 @@ namespace Minerva.Module
             c.Remove(obj);
             return c;
         }
+
+        public static bool operator >(Counter<T> c, int count) => c.Count > count;
+        public static bool operator <(Counter<T> c, int count) => c.Count < count;
+        public static bool operator ==(Counter<T> c, int count) => c.Count == count;
+        public static bool operator !=(Counter<T> c, int count) => !(c == count);
+        public static bool operator >=(Counter<T> c, int count) => !(c < count);
+        public static bool operator <=(Counter<T> c, int count) => !(c > count);
     }
 }
