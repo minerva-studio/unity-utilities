@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Minerva.Module.Tasks
@@ -19,6 +21,54 @@ namespace Minerva.Module.Tasks
             while (current < seconds)
             {
                 current += Time.deltaTime;
+                await Task.Yield();
+            }
+        }
+        /// <summary>
+        /// Similar to <see cref="UnityEngine.WaitForSeconds"/>
+        /// </summary>
+        /// <param name="seconds"></param>
+        /// <returns></returns>
+        public static async Task WaitForSeconds(float seconds, CancellationToken cancellationToken)
+        {
+            float current = 0;
+            while (current < seconds && !cancellationToken.IsCancellationRequested)
+            {
+                current += Time.deltaTime;
+                await Task.Yield();
+            }
+        }
+
+        /// <summary>
+        /// Similar to <see cref="UnityEngine.WaitForSecondsRealtime"/>
+        /// </summary>
+        /// <param name="seconds"></param>
+        /// <returns></returns>
+        public static async Task WaitForSecondsRealtime(float seconds)
+        {
+#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
+            await Task.Delay(TimeSpan.FromSeconds(seconds));
+            return;
+#endif
+            float current = 0;
+            while (current < seconds)
+            {
+                current += Time.unscaledDeltaTime;
+                await Task.Yield();
+            }
+        }
+
+        /// <summary>
+        /// Similar to <see cref="UnityEngine.WaitForSecondsRealtime"/>
+        /// </summary>
+        /// <param name="seconds"></param>
+        /// <returns></returns>
+        public static async Task WaitForSecondsRealtime(float seconds, CancellationToken cancellationToken)
+        {
+            float current = 0;
+            while (current < seconds && !cancellationToken.IsCancellationRequested)
+            {
+                current += Time.unscaledDeltaTime;
                 await Task.Yield();
             }
         }
