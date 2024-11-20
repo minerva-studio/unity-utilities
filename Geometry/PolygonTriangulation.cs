@@ -640,6 +640,4 @@ namespace Minerva.Module.Geomtry
             }
         }
     }
-
-
 }

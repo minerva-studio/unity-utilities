@@ -58,6 +58,21 @@ namespace Minerva.Module.Tasks
             }
         }
 
+        public static Task WaitWhile(Func<bool> value)
+        {
+            return WaitWhile(value, CancellationToken.None);
+        }
+
+        public static async Task WaitWhile(Func<bool> value, CancellationToken destroyCancellationToken)
+        {
+            while (value() && !destroyCancellationToken.IsCancellationRequested)
+            {
+                await Task.Yield();
+            }
+        }
+
+
+
         /// <summary>
         /// Similar to <see cref="UnityEngine.WaitForSecondsRealtime"/>
         /// </summary>

@@ -19,7 +19,8 @@ namespace Minerva.Module
         private string? value;
         private Guid guid;
 
-        public string Value => string.IsNullOrEmpty(value) ? value = Empty.Value : value;
+        public string Value => string.IsNullOrEmpty(value) ? value = ValidateValue() : value;
+
         public readonly Guid Numeric => guid;
 
 
@@ -104,6 +105,15 @@ namespace Minerva.Module
                 }
             }
             return value;
+        }
+
+        private string ValidateValue()
+        {
+            if (guid != Guid.Empty)
+            {
+                return guid.ToString();
+            }
+            else return Empty.Value;
         }
 
         readonly void ISerializationCallbackReceiver.OnBeforeSerialize() { }
