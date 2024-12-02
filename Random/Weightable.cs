@@ -9,6 +9,7 @@ namespace Minerva.Module.WeightedRandom
     /// </summary>
     public static class Weightable
     {
+        public delegate int PositionIndexer(int weightSum);
 
         /// <summary>
         /// return a random item from the list, distributed by the weight given
@@ -31,7 +32,18 @@ namespace Minerva.Module.WeightedRandom
         /// <param name="items"></param>
         /// <param name="weight"></param>
         /// <returns></returns>
-        public static TItem Weight<T, TItem>(this IList<T> weightables, Func<T, TItem> items, Func<T, int> weight)
+        public static TItem Weight<T, TItem>(this IList<T> weightables, Func<T, TItem> items, Func<T, int> weight) => Weight(weightables, items, weight, null);
+
+        /// <summary>
+        /// return a random item from the list, distributed by the weight given
+        /// </summary>
+        /// <typeparam name="T">List type</typeparam>
+        /// <typeparam name="TItem">Item type</typeparam>
+        /// <param name="weightables"></param>
+        /// <param name="items"></param>
+        /// <param name="weight"></param>
+        /// <returns></returns>
+        public static TItem Weight<T, TItem>(this IList<T> weightables, Func<T, TItem> items, Func<T, int> weight, PositionIndexer indexer)
         {
             if (weightables == null) throw new ArgumentNullException("The list of weightables is null");
 
@@ -46,7 +58,7 @@ namespace Minerva.Module.WeightedRandom
             }
 
             int currentTotal = 0;
-            int position = UnityEngine.Random.Range(0, totalWeight);
+            int position = indexer?.Invoke(totalWeight) ?? UnityEngine.Random.Range(0, totalWeight);
             T item = default;
             for (int i = 0; currentTotal < totalWeight && i < weightables.Count; i++)
             {
@@ -159,16 +171,16 @@ namespace Minerva.Module.WeightedRandom
             return WeightNode(weightables, WeightSum(weightables));
         }
 
-        internal static T WeightNode<T>(this IList<T> weightables, int sum) where T : IWeightable
+        internal static T WeightNode<T>(this IList<T> weightables, int sum, PositionIndexer positionIndexer = null) where T : IWeightable
         {
             if (sum == 0)
             {
                 if (weightables.Count == 0) return default;
-                T weightable = weightables[UnityEngine.Random.Range(0, weightables.Count)];
+                T weightable = weightables[positionIndexer?.Invoke(weightables.Count) ?? UnityEngine.Random.Range(0, weightables.Count)];
                 return weightable;
             }
 
-            int position = UnityEngine.Random.Range(0, sum);
+            int position = positionIndexer?.Invoke(sum) ?? UnityEngine.Random.Range(0, sum);
             return WeightNodePos(weightables, sum, position);
         }
 
@@ -195,9 +207,9 @@ namespace Minerva.Module.WeightedRandom
         /// <param name="weightables"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public static T PopWeightNode<T>(this IList<T> weightables) where T : IWeightable
+        public static T PopWeightNode<T>(this IList<T> weightables, PositionIndexer positionIndexer = null) where T : IWeightable
         {
-            return PopWeightNode(weightables, WeightSum(weightables));
+            return PopWeightNode(weightables, WeightSum(weightables), positionIndexer);
         }
 
         /// <summary>
@@ -208,18 +220,18 @@ namespace Minerva.Module.WeightedRandom
         /// <param name="sum"></param>
         /// <param name="position"></param>
         /// <returns></returns>
-        internal static T PopWeightNode<T>(this IList<T> weightables, int sum) where T : IWeightable
+        internal static T PopWeightNode<T>(this IList<T> weightables, int sum, PositionIndexer positionIndexer = null) where T : IWeightable
         {
             if (weightables.Count == 0) return default;
             if (sum == 0)
             {
-                int i = UnityEngine.Random.Range(0, weightables.Count);
+                int i = positionIndexer?.Invoke(weightables.Count) ?? UnityEngine.Random.Range(0, weightables.Count);
                 T weightable = weightables[i];
                 weightables.RemoveAt(i);
                 return weightable;
             }
 
-            int position = UnityEngine.Random.Range(0, sum);
+            int position = positionIndexer?.Invoke(sum) ?? UnityEngine.Random.Range(0, sum);
             return PopWeightNodePos(weightables, sum, position);
         }
 

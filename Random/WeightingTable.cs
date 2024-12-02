@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Minerva.Module.WeightedRandom
 {
@@ -6,6 +7,7 @@ namespace Minerva.Module.WeightedRandom
     {
         List<IWeightable<T>> nodes;
         int sum;
+        Random random;
 
         public IWeightable<T> this[int index]
         {
@@ -22,21 +24,29 @@ namespace Minerva.Module.WeightedRandom
         {
             this.nodes = new List<IWeightable<T>>();
             this.sum = 0;
+            this.random = new UnityRandom();
+        }
+
+        public WeightingTable(Random random)
+        {
+            this.nodes = new List<IWeightable<T>>();
+            this.sum = 0;
+            this.random = random ?? throw new ArgumentNullException(nameof(random));
         }
 
         public IWeightable<T> WeightNode()
         {
-            return nodes.WeightNode(sum);
+            return nodes.WeightNode(sum, n => random.Next(n));
         }
 
         public T Weight()
         {
-            return nodes.WeightNode(sum).Item;
+            return nodes.WeightNode(sum, n => random.Next(n)).Item;
         }
 
         public IWeightable<T> PopWeightNode()
         {
-            return PopWeightNode(UnityEngine.Random.Range(0, sum));
+            return PopWeightNode(random.Next(sum));
         }
 
         public IWeightable<T> PopWeightNode(int position)
@@ -113,4 +123,53 @@ namespace Minerva.Module.WeightedRandom
         }
     }
 
+    public class UnityRandom : System.Random
+    {
+        public UnityRandom()
+        {
+        }
+
+        public UnityRandom(int seed)
+        {
+            UnityEngine.Random.InitState(seed);
+        }
+
+        public override int Next()
+        {
+            return UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+        }
+
+        public override int Next(int maxValue)
+        {
+            return UnityEngine.Random.Range(0, maxValue);
+        }
+
+        public override int Next(int minValue, int maxValue)
+        {
+            return UnityEngine.Random.Range(minValue, maxValue);
+        }
+
+        public override double NextDouble()
+        {
+            return UnityEngine.Random.value;
+        }
+
+        public override void NextBytes(byte[] buffer) => NextBytes(buffer.AsSpan());
+
+        public override unsafe void NextBytes(Span<byte> buffer)
+        {
+            var v = Next();
+            int c = 0;
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                buffer[i] = ((byte*)&v)[c];
+                c++;
+                if (c == 4)
+                {
+                    v = Next();
+                    c = 0;
+                }
+            }
+        }
+    }
 }
