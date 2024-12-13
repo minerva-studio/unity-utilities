@@ -33,20 +33,12 @@ namespace Minerva.Module
             if (list == null) throw new ArgumentNullException();
             int count = list.Count;
             if (count == 0) throw new InvalidOperationException();
-            var randomResult = new List<T>();
-            while (list.Count != 0)
+            //var randomResult = new List<T>();
+            for (int i = 0; i < list.Count * 2; i++)
             {
                 int index = indexer(list.Count);
-                var value = list[index];
-                list.RemoveAt(index);
-                randomResult.Add(value);
-                list.Remove(value);
-
-            }
-            list.Clear();
-            foreach (var item in randomResult)
-            {
-                list.Add(item);
+                int index2 = indexer(list.Count);
+                (list[index2], list[index]) = (list[index], list[index2]);
             }
         }
 
