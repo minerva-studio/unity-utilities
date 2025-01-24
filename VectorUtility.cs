@@ -603,7 +603,7 @@ namespace Minerva.Module
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 RandomRotate(this in Vector2 vector, float rad)
         {
-            Vector2 result = RandomRotate(vector, rad);
+            RandomRotate(vector, rad, out var result);
             return result;
         }
 
