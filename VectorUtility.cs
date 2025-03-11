@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Unity.Burst;
@@ -39,11 +40,11 @@ namespace Minerva.Module
             {
                 int index = span.IndexOf(seperator);
                 if (index < 0) return false;
-                arr[i] = float.Parse(span[..index]);
+                arr[i] = float.Parse(span[..index], provider: CultureInfo.InvariantCulture);
                 span = span[(index + 1)..];
             }
             if (span.Length <= 0) return false;
-            arr[^1] = float.Parse(span);
+            arr[^1] = float.Parse(span, provider: CultureInfo.InvariantCulture);
             return true;
         }
 
@@ -54,11 +55,11 @@ namespace Minerva.Module
             {
                 int index = span.IndexOf(seperator);
                 if (index < 0) return false;
-                arr[i] = int.Parse(span[..index]);
+                arr[i] = int.Parse(span[..index], provider: CultureInfo.InvariantCulture);
                 span = span[(index + 1)..];
             }
             if (span.Length <= 0) return false;
-            arr[^1] = int.Parse(span);
+            arr[^1] = int.Parse(span, provider: CultureInfo.InvariantCulture);
             return true;
         }
         #endregion  
