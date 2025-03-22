@@ -14,28 +14,17 @@ namespace Minerva.Module.Tasks
         /// Similar to <see cref="UnityEngine.WaitForSeconds"/>
         /// </summary>
         /// <param name="seconds"></param>
-        /// <returns></returns>
-        public static async Task WaitForSeconds(float seconds)
-        {
-            float current = 0;
-            while (current < seconds)
-            {
-                current += Time.deltaTime;
-                await Task.Yield();
-            }
-        }
-        /// <summary>
-        /// Similar to <see cref="UnityEngine.WaitForSeconds"/>
-        /// </summary>
-        /// <param name="seconds"></param>
-        /// <returns></returns>
-        public static async Task WaitForSeconds(float seconds, CancellationToken cancellationToken)
+        /// <returns></returns> 
+#if UNITY_2023_1_OR_NEWER
+        [Obsolete("Use Awaitable instead")]
+#endif
+        public static async Task WaitForSeconds(float seconds, CancellationToken cancellationToken = default)
         {
             float current = 0;
             while (current < seconds && !cancellationToken.IsCancellationRequested)
             {
                 current += Time.deltaTime;
-                await Task.Yield();
+                await Awaitable.NextFrameAsync(cancellationToken);
             }
         }
 
@@ -44,67 +33,57 @@ namespace Minerva.Module.Tasks
         /// </summary>
         /// <param name="seconds"></param>
         /// <returns></returns>
-        public static async Task WaitForSecondsRealtime(float seconds)
+        public static async Task WaitForSecondsRealtime(float seconds, CancellationToken cancellationToken = default)
         {
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
-            await Task.Delay(TimeSpan.FromSeconds(seconds));
-            return;
-#endif
             float current = 0;
-            while (current < seconds)
+            while (current < seconds && !cancellationToken.IsCancellationRequested)
             {
                 current += Time.unscaledDeltaTime;
-                await Task.Yield();
+                await Awaitable.NextFrameAsync(cancellationToken);
             }
         }
 
-        public static Task WaitWhile(Func<bool> value)
-        {
-            return WaitWhile(value, CancellationToken.None);
-        }
-
-        public static async Task WaitWhile(Func<bool> value, CancellationToken destroyCancellationToken)
+        public static async Task WaitWhile(Func<bool> value, CancellationToken destroyCancellationToken = default)
         {
             while (value() && !destroyCancellationToken.IsCancellationRequested)
             {
-                await Task.Yield();
+                await Awaitable.NextFrameAsync(destroyCancellationToken);
             }
         }
 
 
 
-        /// <summary>
-        /// Similar to <see cref="UnityEngine.WaitForSecondsRealtime"/>
-        /// </summary>
-        /// <param name="seconds"></param>
-        /// <returns></returns>
-        public static async Task WaitForSecondsRealtime(float seconds, CancellationToken cancellationToken)
+
+        public static Task AsTask(this UnityEngine.Object obj)
         {
-            float current = 0;
-            while (current < seconds && !cancellationToken.IsCancellationRequested)
+            if (!obj) return Task.CompletedTask;
+            if (obj is MonoBehaviour monoBehaviour)
             {
-                current += Time.unscaledDeltaTime;
-                await Task.Yield();
+                return AsTask(monoBehaviour);
             }
-        }
+            return AwaitObjectLifetime(obj);
 
-        public static async Task AsTask(this UnityEngine.Object obj)
-        {
-            while (obj)
+            static async Task AwaitObjectLifetime(UnityEngine.Object obj)
             {
-                await Task.Yield();
+                while (obj)
+                {
+                    await Awaitable.NextFrameAsync();
+                }
             }
         }
 
-        public static Task AsTask(this MonoBehaviour obj)
+        public static Task AsTask(this MonoBehaviour monoBehaviour)
         {
-            if (!obj)
+            if (!monoBehaviour)
             {
                 return Task.CompletedTask;
             }
-            var task = new TaskCompletionSource<object>();
-            obj.destroyCancellationToken.Register(() => task.SetResult(null));
-            return task.Task;
+            var token = monoBehaviour.destroyCancellationToken;
+            if (token.IsCancellationRequested) return Task.CompletedTask;
+
+            var tcs = new TaskCompletionSource<object>();
+            token.Register(() => tcs.TrySetResult(null));
+            return tcs.Task;
         }
     }
 }
