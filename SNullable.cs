@@ -40,6 +40,6 @@ namespace Minerva.Module
         public override readonly int GetHashCode() => HasValue ? Value.GetHashCode() : 0;
         public readonly T GetValueOrDefault() => hasValue ? value : default;
         public readonly T GetValueOrDefault(T defaultValue) => hasValue ? value : defaultValue;
-        public readonly override string ToString() => HasValue ? "null" : Value.ToString();
+        public readonly override string ToString() => !HasValue ? "null" : Value.ToString();
     }
 }
