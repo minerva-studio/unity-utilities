@@ -28,6 +28,11 @@ namespace Minerva.Module.Editor
                 }
                 catch { }
             }
+            return GetValueByReflection(property);
+        }
+
+        public static object GetValueByReflection(this SerializedProperty property)
+        {
             string propertyPath = property.propertyPath;
             object value = property.serializedObject.targetObject;
             int i = 0;
