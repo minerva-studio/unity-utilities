@@ -178,13 +178,36 @@ namespace Minerva.Module
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal bool TryGetValue(string s, char separator, out TValue value)
             {
+                if (string.IsNullOrEmpty(s))
+                {
+                    return TryGetSelfValue(out value);
+                }
                 int count = GetSeperatorCount(s, separator);
                 Span<int> indices = stackalloc int[count + 1];
                 var key = GetStringKey(s, separator, indices);
                 return TryGetValue(key, out value);
             }
+
+            private bool TryGetSelfValue(out TValue value)
+            {
+                if (isTerminated)
+                {
+                    value = this.value;
+                    return true;
+                }
+                else
+                {
+                    value = default;
+                    return false;
+                }
+            }
+
             internal bool TryGetValue(KeyPointer prefix, out TValue value)
             {
+                if (prefix.Count == 0)
+                {
+                    return TryGetSelfValue(out value);
+                }
                 Node currentNode = this;
                 for (int i = 0; i < prefix.Count; i++)
                 {
