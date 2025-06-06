@@ -13,14 +13,27 @@ namespace Minerva.Module
         [SerializeField, DisplayIf(nameof(randomize), false)] public float value;
         [SerializeField, DisplayIf(nameof(randomize))] public Range range;
 
-        public float Value => randomize ? range.value : value;
-        public float Min => randomize ? range.min : value;
-        public float Max => randomize ? range.max : value;
+        public readonly float Value => randomize ? range.min : value;
+        public readonly float Min => randomize ? range.min : value;
+        public readonly float Max => randomize ? range.max : value;
+
+
+
+        public readonly float Lerp(float t)
+        {
+            return randomize ? range.Lerp(t) : value;
+        }
+
 
 
         public static implicit operator float(MinMaxValue minMaxValue)
         {
             return minMaxValue.Value;
+        }
+
+        public static implicit operator MinMaxValue(float value)
+        {
+            return new MinMaxValue { randomize = false, value = value };
         }
     }
 }

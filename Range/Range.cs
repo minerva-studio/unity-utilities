@@ -1,4 +1,6 @@
-﻿using System;
+﻿using NUnit.Framework.Internal;
+using System;
+using UnityEngine;
 
 namespace Minerva.Module
 {
@@ -25,9 +27,7 @@ namespace Minerva.Module
         /// <summary>
         /// The length of the range.
         /// </summary>
-        public float range => max - min;
-
-        public float value { get => min == max ? min : UnityEngine.Random.Range(min, max); }
+        public readonly float range => max - min;
 
         /// <summary>
         /// Constructs a new RangeInt with given start, length values.
@@ -45,18 +45,23 @@ namespace Minerva.Module
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public bool IsWithin(float value)
+        public readonly bool IsWithin(float value)
         {
             return value <= max && value >= min;
         }
 
+        public readonly float Lerp(float t)
+        {
+            return Mathf.Lerp(min, max, t);
+        }
 
-        public override string ToString()
+
+        public readonly override string ToString()
         {
             return $"[{min}, {max}]";
         }
 
-        public float Clamp(float size)
+        public readonly float Clamp(float size)
         {
             return UnityEngine.Mathf.Clamp(size, min, max);
         }

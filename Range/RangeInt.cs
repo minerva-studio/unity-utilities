@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Minerva.Module
 {
@@ -24,12 +25,7 @@ namespace Minerva.Module
         /// <summary>
         /// The length of the range.
         /// </summary>
-        public int length => max - min;
-
-        /// <summary>
-        /// A random value in the integer range
-        /// </summary>
-        public int value { get => min == max ? min : UnityEngine.Random.Range(min, max + 1); }
+        public readonly int length => max - min;
 
         /// <summary>
         /// Constructs a new RangeInt with given start, length values.
@@ -42,6 +38,10 @@ namespace Minerva.Module
             this.max = max;
         }
 
+        public readonly int Lerp(float t)
+        {
+            return (int)Mathf.Lerp(min, max + 1, t);
+        }
 
         public static implicit operator UnityEngine.RangeInt(RangeInt ri)
         {
