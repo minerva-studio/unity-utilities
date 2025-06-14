@@ -19,7 +19,7 @@ namespace Minerva.Module
         public int Max => randomize ? range.max : value;
 
 
-        public readonly float Lerp(float t)
+        public readonly int Lerp(float t)
         {
             return randomize ? range.Lerp(t) : value;
         }
