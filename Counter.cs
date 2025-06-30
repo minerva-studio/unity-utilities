@@ -16,6 +16,17 @@ namespace Minerva.Module
 
         List<UnityObject> ICounter<UnityObject>.Counter => counter;
         public int Count => counter.Count;
+        public UnityObject[] Items
+        {
+            get
+            {
+                RemoveInvalid();
+                var arr = new UnityObject[counter.Count];
+                counter.CopyTo(arr, 0);
+                return arr;
+            }
+        }
+
 
         public Counter()
         {
@@ -55,17 +66,6 @@ namespace Minerva.Module
             counter.RemoveAll(o => !o);
         }
 
-        public UnityObject[] Items
-        {
-            get
-            {
-                RemoveInvalid();
-                var arr = new UnityObject[counter.Count];
-                counter.CopyTo(arr, 0);
-                return arr;
-            }
-        }
-
         public void Clear()
         {
             if (Count == 0) return;
@@ -81,6 +81,20 @@ namespace Minerva.Module
         public void CopyTo(UnityObject[] array, int arrayIndex)
         {
             counter.CopyTo(array, arrayIndex);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is int value)
+            {
+                return this.Count == value;
+            }
+            else return obj == this;
+        }
+
+        public override int GetHashCode()
+        {
+            return counter.GetHashCode();
         }
 
         public static Counter operator +(Counter c, UnityObject obj)
@@ -116,6 +130,17 @@ namespace Minerva.Module
 
         List<T> ICounter<T>.Counter => counter;
         public int Count => counter.Count;
+        public T[] Items
+        {
+            get
+            {
+                if (cachedItems != null) return cachedItems;
+                var arr = cachedItems = new T[counter.Count];
+                counter.CopyTo(arr, 0);
+                return arr;
+            }
+        }
+
 
 
         public Counter()
@@ -169,15 +194,18 @@ namespace Minerva.Module
             counter.CopyTo(array, arrayIndex);
         }
 
-        public T[] Items
+        public override bool Equals(object obj)
         {
-            get
+            if (obj is int value)
             {
-                if (cachedItems != null) return cachedItems;
-                var arr = cachedItems = new T[counter.Count];
-                counter.CopyTo(arr, 0);
-                return arr;
+                return this.Count == value;
             }
+            else return obj == this;
+        }
+
+        public override int GetHashCode()
+        {
+            return counter.GetHashCode();
         }
 
         public static Counter<T> operator +(Counter<T> c, T obj)
