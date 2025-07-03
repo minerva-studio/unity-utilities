@@ -26,11 +26,6 @@ namespace Minerva.Module
 
 
 
-        public static implicit operator float(MinMaxValue minMaxValue)
-        {
-            return minMaxValue.Value;
-        }
-
         public static implicit operator MinMaxValue(float value)
         {
             return new MinMaxValue { randomize = false, value = value };

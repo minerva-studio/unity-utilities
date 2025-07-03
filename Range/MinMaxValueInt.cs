@@ -24,12 +24,6 @@ namespace Minerva.Module
             return randomize ? range.Lerp(t) : value;
         }
 
-
-        public static implicit operator int(MinMaxValueInt minMaxValue)
-        {
-            return minMaxValue.Value;
-        }
-
         public static implicit operator MinMaxValueInt(int value)
         {
             return new MinMaxValueInt() { randomize = false, value = value };

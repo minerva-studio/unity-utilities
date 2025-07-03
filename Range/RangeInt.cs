@@ -40,7 +40,7 @@ namespace Minerva.Module
 
         public readonly int Lerp(float t)
         {
-            return (int)Mathf.Lerp(min, max + 1, t);
+            return UniformLerpInt(min, max, t);
         }
 
         public static implicit operator UnityEngine.RangeInt(RangeInt ri)
@@ -66,6 +66,16 @@ namespace Minerva.Module
         readonly IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+
+        static int UniformLerpInt(int min, int max, float t)
+        {
+            t = Mathf.Clamp01(t);
+            int count = max - min + 1;
+            int idx = (int)(t * count);
+            if (idx == count) idx = count - 1;
+            return min + idx;
         }
     }
 }
