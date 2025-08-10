@@ -1,16 +1,20 @@
-﻿using System.Collections;
-using System;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Runtime.CompilerServices;
 using Unity.Collections;
-using static Minerva.Module.Geomtry.PolygonTriangulation;
 using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
 
 namespace Minerva.Module.Geomtry.Native
 {
     /// <summary>
     /// Utility class for geometry calculations
     /// </summary>
+#if ENABLE_BURST_AOT
+    [Unity.Burst.BurstCompile(CompileSynchronously = true)]
+#endif
     public static class NativeGeometry
     {
         public const int CIRCLE_DEGREE = 360;
@@ -22,7 +26,8 @@ namespace Minerva.Module.Geomtry.Native
         /// <param name="polygon"></param>
         /// <param name="point"></param>
         /// <returns></returns>
-        public static bool IsPointInPolygon(NativePolygon polygon, Vector3 point)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsPointInPolygon(NativePolygon polygon, float3 point)
         {
             int i;
             int j;
@@ -42,12 +47,13 @@ namespace Minerva.Module.Geomtry.Native
         /// <param name="polygon"></param>
         /// <param name="point"></param>
         /// <returns></returns>
-        public static float DistanceToPolygonBorder(NativePolygon polygon, Vector3 point)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DistanceToPolygonBorder(NativePolygon polygon, float3 point)
         {
             var dist = float.MaxValue;
             for (int i = 0; i < polygon.Length; i++)
             {
-                dist = Mathf.Min(dist, DistanceToSegment(polygon[i], polygon[(i + 1) % polygon.Length], point));
+                dist = math.min(dist, DistanceToSegment(polygon[i], polygon[(i + 1) % polygon.Length], point));
             }
             return dist;
         }
@@ -58,7 +64,8 @@ namespace Minerva.Module.Geomtry.Native
         /// <param name="polygon"></param>
         /// <param name="point"></param>
         /// <returns></returns>
-        public static float DistanceToPolygonBorderSigned(NativePolygon polygon, Vector3 point)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DistanceToPolygonBorderSigned(NativePolygon polygon, float3 point)
         {
             var dist = DistanceToPolygonBorder(polygon, point);
             //return a negative distance representing how inside this point is
@@ -75,7 +82,8 @@ namespace Minerva.Module.Geomtry.Native
         /// <param name="polygon"></param>
         /// <param name="point"></param>
         /// <returns></returns>
-        public static float DistanceToPolygon(NativePolygon polygon, Vector3 point)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DistanceToPolygon(NativePolygon polygon, float3 point)
         {
             var dist = DistanceToPolygonBorder(polygon, point);
             //return a negative distance representing how inside this point is
@@ -93,24 +101,25 @@ namespace Minerva.Module.Geomtry.Native
         /// <param name="b"></param>
         /// <param name="point"></param>
         /// <returns></returns>
-        public static float DistanceToSegment(Vector3 a, Vector3 b, Vector3 point)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DistanceToSegment(float3 a, float3 b, float3 point)
         {
-            Vector3 segment = a - b;
-            Vector3 pointSegment = point - b;
-            if (segment.sqrMagnitude == 0)
+            float3 segment = a - b;
+            float3 pointSegment = point - b;
+            if (math.length(segment) == 0)
             {
-                return Mathf.Min((a - point).magnitude, (b - point).magnitude);
+                return math.min(math.length(a - point), math.length(b - point));
             }
-            Vector3 projection = Vector3.Project(pointSegment, segment);
-            Vector3 intersection = b + projection;
-            float xRange = Mathf.InverseLerp(a.x, b.x, intersection.x);
-            float yRange = Mathf.InverseLerp(a.y, b.y, intersection.y);
+            float3 projection = math.project(pointSegment, segment);
+            float3 intersection = b + projection;
+            float xRange = math.unlerp(a.x, b.x, intersection.x);
+            float yRange = math.unlerp(a.y, b.y, intersection.y);
             //not in range
             if (xRange >= 1 || xRange <= 0 || yRange >= 1 || yRange <= 0)
             {
-                return Mathf.Min((a - point).magnitude, (b - point).magnitude);
+                return math.min(math.length(a - point), math.length(b - point));
             }
-            else return (point - intersection).magnitude;
+            else return math.length(point - intersection);
         }
 
         /// <summary>
@@ -120,6 +129,7 @@ namespace Minerva.Module.Geomtry.Native
         /// <param name="rotation"></param>
         /// <param name="angle"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsWithinAngleMask(float angleMask, float rotation, float angle)
         {
             float lowerBound = (rotation - angleMask / 2) % CIRCLE_DEGREE;
@@ -148,111 +158,91 @@ namespace Minerva.Module.Geomtry.Native
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float AngleDifference(float a, float b)
         {
-            float angleA = Mathf.Abs(a - b);
-            return Mathf.Min(angleA, 360 - angleA);
+            float angleA = math.abs(a - b);
+            return math.min(angleA, 360 - angleA);
         }
-
-        /// <summary>
-        /// Get all point inside a polygon
-        /// </summary>
-        /// <param name="polygon"></param>
-        /// <returns></returns>
-        //public static NativeList<Vector2Int> GetPointsInPolygon(NativePolygon polygon, Allocator allocator)
-        //{
-        //    NativeList<Vector2Int> points = new NativeList<Vector2Int>(allocator);
-        //    PolygonTriangulation polygonTriangulation = new PolygonTriangulation();
-        //    polygonTriangulation.SetPoints(polygon.ToList());
-        //    polygonTriangulation.Triangulate();
-        //    var result = polygonTriangulation.Result;
-
-        //    NativeArray<Vector3> triangle = new NativeArray<Vector3>(3, Allocator.Temp);
-        //    for (int i = 0; i < result.Count; i += 3)
-        //    {
-        //        triangle[0] = result[i];
-        //        triangle[1] = result[i + 1];
-        //        triangle[2] = result[i + 2];
-        //        int xMin = Mathf.FloorToInt(triangle.Min(p => p.x));
-        //        int xMax = Mathf.CeilToInt(triangle.Max(p => p.x));
-        //        int yMin = Mathf.FloorToInt(triangle.Min(p => p.y));
-        //        int yMax = Mathf.CeilToInt(triangle.Max(p => p.y));
-        //        RectInt rect = new RectInt(xMin, yMin, xMax - xMin, yMax - yMin);
-
-        //        for (int x = xMin; x <= xMax; x++)
-        //            for (int y = yMin; y <= yMax; y++)
-        //            {
-        //                var item = new Vector2Int(x, y);
-        //                if (IsPointInPolygon(triangle, (Vector2)item))
-        //                {
-        //                    points.Add(item);
-        //                }
-        //            }
-        //    }
-        //    triangle.Dispose();
-        //    return points;
-        //}
     }
 
 
     /// <summary>
     /// A class representing a polygon
     /// </summary>
-    public struct NativePolygon : IEnumerable<Vector3>, IDisposable
+    public struct NativePolygon : IEnumerable<float3>, IDisposable
     {
-        public NativeArray<Vector3> vertices;
+        public NativeArray<float3> vertices;
 
         public int Length => vertices.Length;
-        public Vector3 this[int index]
+        public float3 this[int index]
         {
             get { return vertices[index]; }
             set { vertices[index] = value; }
         }
 
 
+        public NativePolygon(float3[] vertices, Allocator allocator)
+        {
+            this.vertices = new NativeArray<float3>(vertices, allocator);
+        }
+
         public NativePolygon(Vector3[] vertices, Allocator allocator)
         {
-            this.vertices = new NativeArray<Vector3>(vertices, allocator);
+            this.vertices = new NativeArray<float3>(vertices.Length, allocator);
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                this.vertices[i] = new float3(vertices[i]);
+            }
         }
 
 
         public NativePolygon(Vector2[] vertices, Allocator allocator)
         {
-            this.vertices = new NativeArray<Vector3>(vertices.Length, allocator);
+            this.vertices = new NativeArray<float3>(vertices.Length, allocator);
             for (int i = 0; i < vertices.Length; i++)
             {
-                this.vertices[i] = vertices[i];
+                this.vertices[i] = new float3(vertices[i], 0);
+            }
+        }
+
+        public NativePolygon(float2[] vertices, Allocator allocator)
+        {
+            this.vertices = new NativeArray<float3>(vertices.Length, allocator);
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                this.vertices[i] = new float3(vertices[i], 0);
             }
         }
 
         public NativePolygon(int length, Allocator allocator)
         {
-            this.vertices = new NativeArray<Vector3>(length, allocator);
+            this.vertices = new NativeArray<float3>(length, allocator);
         }
 
-        public static implicit operator NativePolygon(NativeArray<Vector3> vertices)
+        public static implicit operator NativePolygon(NativeArray<float3> vertices)
         {
             return new NativePolygon() { vertices = vertices };
         }
 
 
 
-        public (Vector3, Vector3, Vector3)[] Edges
-        {
-            get
-            {
-                (Vector3, Vector3, Vector3)[] values = new (Vector3, Vector3, Vector3)[Length];
-                for (int i = 0; i < vertices.Length; i++)
-                {
-                    values[i] = (vertices[i], vertices[(i + 1) % Length], vertices[(i + 1) % Length] - vertices[i]);
-                }
-                return values;
-            }
-        }
+        //public (float3, float3, float3)[] Edges
+        //{
+        //    get
+        //    {
+        //        (float3, float3, float3)[] values = new (float3, float3, float3)[Length];
+        //        for (int i = 0; i < vertices.Length; i++)
+        //        {
+        //            values[i] = (vertices[i], vertices[(i + 1) % Length], vertices[(i + 1) % Length] - vertices[i]);
+        //        }
+        //        return values;
+        //    }
+        //}
 
-        public IEnumerator<Vector3> GetEnumerator()
+        public IEnumerator<float3> GetEnumerator()
         {
-            return ((IEnumerable<Vector3>)vertices).GetEnumerator();
+            return ((IEnumerable<float3>)vertices).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
