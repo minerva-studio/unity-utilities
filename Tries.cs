@@ -24,23 +24,6 @@ namespace Minerva.Module
                 isTerminated = true;
             }
 
-            public Node Clone()
-            {
-                Node node = new()
-                {
-                    value = value,
-                    count = count,
-                    isTerminated = isTerminated,
-                };
-
-                foreach (var item in node.Children)
-                {
-                    node.Children[item.Key] = item.Value.Clone();
-                }
-
-                return node;
-            }
-
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal bool Add(string s, char separator, TValue value)
@@ -113,6 +96,16 @@ namespace Minerva.Module
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal bool Remove(string s, char separator, TValue value)
             {
+                if (string.IsNullOrEmpty(s))
+                {
+                    if (!isTerminated || !EqualityComparer<TValue>.Default.Equals(this.value, value))
+                        return false;
+
+                    this.isTerminated = false;
+                    this.count--;
+                    return true;
+                }
+
                 int count = GetSeperatorCount(s, separator);
                 Span<int> indices = stackalloc int[count + 1];
                 var key = GetStringKey(s, separator, indices);
@@ -129,7 +122,8 @@ namespace Minerva.Module
                     if (!currentNode.Children.TryGetValue(key, out var childNode)) return false;
                     currentNode = childNode;
                 }
-                if (!currentNode.isTerminated || Equals(currentNode.value, item)) return false;
+                if (!currentNode.isTerminated || !EqualityComparer<TValue>.Default.Equals(currentNode.value, item))
+                    return false;
 
                 currentNode.isTerminated = false;
                 currentNode = this;
@@ -146,34 +140,55 @@ namespace Minerva.Module
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal void Set(string s, char separator, TValue value)
             {
+                if (string.IsNullOrEmpty(s))
+                {
+                    bool wasTerminated = isTerminated;
+                    this.value = value;
+                    this.isTerminated = true;
+
+                    if (!wasTerminated)
+                        this.count++;
+
+                    return;
+                }
+
                 int count = GetSeperatorCount(s, separator);
                 Span<int> indices = stackalloc int[count + 1];
                 var key = GetStringKey(s, separator, indices);
                 Set(key, value);
             }
+
             internal void Set(KeyPointer prefix, TValue value)
             {
                 Node currentNode = this;
                 for (int i = 0; i < prefix.Count; i++)
                 {
                     var key = prefix[i];
-                    currentNode.count++;
-                    //move to the path
-                    if (currentNode.Children.TryGetValue(key, out var child))
-                    {
-                        currentNode = child;
-                    }
-                    //current path does not exist, create nodes to create the path
-                    else
+                    if (!currentNode.Children.TryGetValue(key, out var child))
                     {
                         child = new Node();
                         currentNode.Children.Add(key, child);
-                        currentNode = child;
                     }
+                    currentNode = child;
                 }
+
+                bool wasTerminated = currentNode.isTerminated;
                 currentNode.value = value;
                 currentNode.isTerminated = true;
+
+                if (!wasTerminated)
+                {
+                    currentNode = this;
+                    currentNode.count++;
+                    for (int i = 0; i < prefix.Count; i++)
+                    {
+                        var key = prefix[i];
+                        currentNode = currentNode.Children[key];
+                        currentNode.count++;
+                    }
+                }
             }
+
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal bool TryGetValue(string s, char separator, out TValue value)
@@ -258,7 +273,7 @@ namespace Minerva.Module
                 {
                     if (node.count == 0) continue;
                     var baseLength = stringBuilder.Length;
-                    stringBuilder.Append(key);
+                    stringBuilder.Append(key.Span);
                     node.TraverseCopy(stringBuilder, separator, arr, ref idx);
                     stringBuilder.Length = baseLength;
                 }
@@ -276,7 +291,7 @@ namespace Minerva.Module
                 foreach (var (key, node) in Children)
                 {
                     if (node.count == 0) continue;
-                    stack.Push(key.ToString());
+                    stack.Push(new string(key.Span));
                     node.TraverseCopy(stack, separator, arr, ref idx);
                     stack.Pop();
                 }
@@ -347,8 +362,8 @@ namespace Minerva.Module
                 foreach (var (key, node) in Children)
                 {
                     var baseLength = stringBuilder.Length;
-                    stringBuilder.Append(key);
-                    ToDictionary(stringBuilder, dictionary, separator);
+                    stringBuilder.Append(key.Span);
+                    node.ToDictionary(stringBuilder, dictionary, separator);
                     stringBuilder.Length = baseLength;
                 }
                 if (stringBuilder.Length > 0) stringBuilder.Length--;
@@ -635,13 +650,17 @@ namespace Minerva.Module
         public bool Clear(string key, bool keepStructure = false)
         {
             if (!TryGetNode(key, out var node)) return false;
-            return node.Clear(keepStructure);
+            var changed = node.Clear(keepStructure);
+            root?.Recount();
+            return changed;
         }
 
         public bool Clear<T>(T prefix, bool keepStructure = false) where T : IList<string>
         {
             if (!TryGetNode(prefix, out var node)) return false;
-            return node.Clear(keepStructure);
+            var changed = node.Clear(keepStructure);
+            root?.Recount();
+            return changed;
         }
 
         public bool Remove(KeyValuePair<string, TValue> item) => root?.Remove(item.Key, separator, item.Value) ?? false;

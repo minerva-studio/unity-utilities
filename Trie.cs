@@ -33,18 +33,12 @@ namespace Minerva.Module
             }
         }
 
-        internal ref struct StringKey
+        internal readonly ref struct StringKey
         {
-            public string key;
-            Span<int> indice;
+            private readonly string key;
+            private readonly Span<int> indice;
 
-            public StringKey(string key, Span<int> indice)
-            {
-                this.key = key;
-                this.indice = indice;
-            }
-
-            public int Count => indice.Length;
+            public readonly int Count => key.Length == 0 ? 0 : indice.Length;
             public ReadOnlyMemory<char> this[int index]
             {
                 get
@@ -54,14 +48,20 @@ namespace Minerva.Module
                     return key.AsMemory(start, end - start);
                 }
             }
+
+            public StringKey(string key, Span<int> indice)
+            {
+                this.key = key;
+                this.indice = indice;
+            }
         }
 
-        internal ref struct KeyPointer
+        internal readonly ref struct KeyPointer
         {
-            int mode;
-            public IList<string> keys;
-            public IList<ReadOnlyMemory<char>> keys2;
-            public StringKey readOnlyMemories;
+            private readonly int mode;
+            private readonly IList<string> keys;
+            private readonly IList<ReadOnlyMemory<char>> keys2;
+            private readonly StringKey readOnlyMemories;
 
             private KeyPointer(int mode) : this() { this.mode = mode; }
             public KeyPointer(IList<string> keys) : this(1) { this.keys = keys; }
@@ -90,7 +90,7 @@ namespace Minerva.Module
             public bool Clear();
         }
 
-        internal class NodeBase<TNode> : INode where TNode : NodeBase<TNode>, INode
+        internal class NodeBase<TNode> : INode where TNode : NodeBase<TNode>, INode, new()
         {
             protected Dictionary<ReadOnlyMemory<char>, TNode> children;
             public int count;
@@ -98,6 +98,27 @@ namespace Minerva.Module
 
             public Dictionary<ReadOnlyMemory<char>, TNode> Children { get => children ??= new(CharsComparer.Default); }
             public int LocalCount => children?.Count ?? 0;
+
+
+            public TNode Clone()
+            {
+                var node = (TNode)MemberwiseClone();
+
+                if (children == null || children.Count == 0)
+                {
+                    node.children = null;
+                    return node;
+                }
+
+                var newChildren = new Dictionary<ReadOnlyMemory<char>, TNode>(children.Count, children.Comparer);
+                foreach (var kv in children)
+                    newChildren.Add(kv.Key, kv.Value.Clone());
+
+                node.children = newChildren;
+
+                return node;
+            }
+
 
             public bool Clear()
             {
@@ -196,6 +217,18 @@ namespace Minerva.Module
                 }
             }
 
+            public int Recount()
+            {
+                int c = isTerminated ? 1 : 0;
+                if (children != null)
+                {
+                    foreach (var child in Children.Values)
+                        c += child.Recount();
+                }
+                count = c;
+                return c;
+            }
+
             public IEnumerator<string[]> GetKeyEnumerator(Stack<string> stack)
             {
                 if (isTerminated)
@@ -205,7 +238,7 @@ namespace Minerva.Module
                 if (count <= 1) yield break;
                 foreach (var (key, node) in Children)
                 {
-                    stack.Push(key.ToString());
+                    stack.Push(new string(key.Span));
                     var enumerator = node.GetKeyEnumerator(stack);
                     while (enumerator.MoveNext())
                     {
@@ -226,7 +259,7 @@ namespace Minerva.Module
                 foreach (var (key, node) in Children)
                 {
                     int length = stringBuilder.Length;
-                    stringBuilder.Append(key);
+                    stringBuilder.Append(key.Span);
                     var enumerator = node.GetKeyEnumerator(stringBuilder, separator);
                     while (enumerator.MoveNext())
                     {
@@ -248,7 +281,7 @@ namespace Minerva.Module
                 foreach (var (key, node) in Children)
                 {
                     if (node.count == 0) continue;
-                    stack.Push(key.ToString());
+                    stack.Push(new string(key.Span));
                     node.TraverseCopyKey(stack, separator, arr, ref idx);
                     stack.Pop();
                 }
@@ -267,7 +300,7 @@ namespace Minerva.Module
                 {
                     if (node.count == 0) continue;
                     var baseLength = stringBuilder.Length;
-                    stringBuilder.Append(key);
+                    stringBuilder.Append(key.Span);
                     node.TraverseCopyKey(stringBuilder, separator, arr, ref idx);
                     stringBuilder.Length = baseLength;
                 }
@@ -345,22 +378,6 @@ namespace Minerva.Module
                 }
 
                 return true;
-            }
-
-            public Node Clone()
-            {
-                Node node = new()
-                {
-                    count = count,
-                    isTerminated = isTerminated,
-                };
-
-                foreach (var item in node.Children)
-                {
-                    node.Children[item.Key] = item.Value.Clone();
-                }
-
-                return node;
             }
         }
 
@@ -561,13 +578,17 @@ namespace Minerva.Module
         public bool Clear(string key, bool keepStructure = false)
         {
             if (!TryGetNode(key, out var node)) return false;
-            return node.Clear(keepStructure);
+            var changed = node.Clear(keepStructure);
+            root?.Recount();          // 这里回填一次
+            return changed;
         }
 
         public bool Clear<T>(T prefix, bool keepStructure = false) where T : IList<string>
         {
             if (!TryGetNode(prefix, out var node)) return false;
-            return node.Clear(keepStructure);
+            var changed = node.Clear(keepStructure);
+            root?.Recount();          // 这里回填一次
+            return changed;
         }
 
         public void Shrink() => root?.Shrink();

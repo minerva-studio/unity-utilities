@@ -117,18 +117,22 @@ namespace Minerva.Module
 
         public readonly void Clear() => Clear(false);
 
-        public readonly void Clear(bool keepStructure) => root?.Clear(keepStructure);
+        public readonly bool Clear(bool keepStructure) => root?.Clear(keepStructure) ?? true;
 
         public readonly bool Clear(string key, bool keepStructure = false)
         {
             if (!TryGetNode(key, out var node)) return false;
-            return node.Clear(keepStructure);
+            var changed = node.Clear(keepStructure);
+            root?.Recount();
+            return changed;
         }
 
-        public bool Clear<T>(T prefix, bool keepStructure = false) where T : IList<string>
+        public readonly bool Clear<T>(T prefix, bool keepStructure = false) where T : IList<string>
         {
             if (!TryGetNode(prefix, out var node)) return false;
-            return node.Clear(keepStructure);
+            var changed = node.Clear(keepStructure);
+            root?.Recount();
+            return changed;
         }
 
 
