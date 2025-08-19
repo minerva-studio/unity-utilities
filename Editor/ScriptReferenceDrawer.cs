@@ -28,17 +28,21 @@ namespace Minerva.Module.Editor
             //    Debug.Log(monoScript.name);
             //    Debug.Log(monoScript.GetClass().Name);
             //}
-            SerializedProperty aqname = property.FindPropertyRelative(nameof(ScriptReference.assemblyQualifiedName));
+            SerializedProperty aname = property.FindPropertyRelative(nameof(ScriptReference.assemblyName));
+            SerializedProperty cname = property.FindPropertyRelative(nameof(ScriptReference.fullName));
             var monoScript = scriptProperty.boxedValue as MonoScript;
+            System.Type type = monoScript ? monoScript.GetClass() : null;
             if (monoScript && monoScript.GetClass() != null
                 && (monoScript.GetClass().IsSubclassOf(r.Type) || r.Type == monoScript.GetClass())
                 )
             {
-                aqname.stringValue = monoScript.GetClass().AssemblyQualifiedName;
+                aname.stringValue = type.Assembly.GetName().Name;
+                cname.stringValue = type.FullName;
             }
             else
             {
-                aqname.stringValue = string.Empty;
+                aname.stringValue = string.Empty;
+                cname.stringValue = string.Empty;
             }
             property.serializedObject.ApplyModifiedProperties();
             //Debug.Log(monoScript);

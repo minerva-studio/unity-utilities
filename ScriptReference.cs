@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Reflection;
 namespace Minerva.Module
 {
     /// <summary>
@@ -10,7 +12,8 @@ namespace Minerva.Module
 #if UNITY_EDITOR
         public UnityEditor.MonoScript script;
 #endif
-        public string assemblyQualifiedName = "";
+        public string fullName;
+        public string assemblyName;
 
 
         public virtual Type Type => typeof(UnityEngine.Object);
@@ -24,20 +27,50 @@ namespace Minerva.Module
 
         public Type GetClass()
         {
-            return Type.GetType(assemblyQualifiedName);
+            return TryResolve(out var type) ? type : null;
         }
 
         public void SetClass(Type type)
         {
             if (type == null)
             {
-                assemblyQualifiedName = string.Empty;
+                fullName = string.Empty;
+                assemblyName = string.Empty;
             }
             else
             {
-                assemblyQualifiedName = type.AssemblyQualifiedName;
+                fullName = type.FullName;
+                assemblyName = type.Assembly.GetName().Name;
             }
         }
+
+        public bool TryResolve(out Type type)
+        {
+            type = null;
+
+            var asm = AppDomain.CurrentDomain.GetAssemblies()
+                         .FirstOrDefault(a => string.Equals(a.GetName().Name, assemblyName, StringComparison.Ordinal));
+            if (asm != null)
+                type = asm.GetType(fullName, throwOnError: false);
+
+            if (type == null)
+                type = Type.GetType($"{fullName}, {assemblyName}", throwOnError: false);
+
+            if (type == null)
+            {
+                try
+                {
+                    var loaded = Assembly.Load(new AssemblyName(assemblyName));
+                    type = loaded.GetType(fullName, throwOnError: false);
+                }
+                catch { }
+            }
+
+            return type != null;
+        }
+
+
+
 
         public static implicit operator Type(ScriptReference cr)
         {
@@ -82,7 +115,6 @@ namespace Minerva.Module
         {
             return !cr ? new ScriptReference<T>() : new ScriptReference<T>(cr);
         }
-
 #endif
     }
 }
