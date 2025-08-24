@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Threading;
+using UnityEngine;
 
 namespace Minerva.Module
 {
@@ -8,6 +9,7 @@ namespace Minerva.Module
     /// </summary>
     public interface IMonoBehaviour
     {
+        CancellationToken destroyCancellationToken { get; }
         public bool enabled { get; set; }
         public Transform transform { get; }
         public GameObject gameObject { get; }
