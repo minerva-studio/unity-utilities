@@ -1,123 +1,177 @@
 ﻿#nullable enable
 using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Minerva.Module
 {
     /// <summary>
-    /// A serializable unique identifer, compatible with <see cref="Guid"/>
+    /// Serializable 128-bit UUID with zero-alloc compare & hash.
+    /// Backed by two ulongs; compatible with Guid.
     /// </summary>
     [Serializable]
-    public struct UUID : IComparable, IComparable<UUID>, IComparable<Guid>, IEquatable<UUID>, IEquatable<Guid>, ISerializationCallbackReceiver
+    public struct UUID :
+        IComparable, IComparable<UUID>, IComparable<Guid>,
+        IEquatable<UUID>, IEquatable<Guid>, ISerializationCallbackReceiver
     {
-        public static UUID Empty = Guid.Empty;
+        // ---- Static ----
+        public static readonly UUID Empty = new UUID(0UL, 0UL);
 
-        [SerializeField]
-        [ContextMenuItem("New UUID", "NewUUID")]
-        private string? value;
-        private Guid guid;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static UUID NewUUID() => new UUID(Guid.NewGuid());
 
-        public string Value => string.IsNullOrEmpty(value) ? value = ValidateValue() : value;
+        // ---- Serialized payload (no strings) ----
+        [SerializeField] private ulong lo; // bytes [0..7]
+        [SerializeField] private ulong hi; // bytes [8..15]
 
-        public readonly Guid Numeric => guid;
+        // ---- Runtime caches (not serialized) ----
+        [NonSerialized] private Guid guid;          // lazily materialized
+        [NonSerialized] private bool guidCached;
+        [NonSerialized] private string? cached;     // lazily materialized
 
 
-        public UUID(string value)
+        // ---- Constructors ----
+        public UUID(ulong hi, ulong lo)
         {
-            this.value = value;
-            try
-            {
-                this.guid = string.IsNullOrEmpty(value) ? Guid.Empty : new Guid(value);
-            }
-            catch (Exception)
-            {
-                this.guid = Guid.Empty;
-                this.value = Empty.Value;
-            }
+            this.hi = hi;
+            this.lo = lo;
+            guid = default;
+            guidCached = false;
+            cached = null;
         }
 
         public UUID(Guid value)
         {
-            this.value = value.ToString();
-            this.guid = value;
+            var bytes = value.ToByteArray();      // 16 bytes, little-endian shape used by Guid
+            lo = BitConverter.ToUInt64(bytes, 0);  // bytes[0..7]
+            hi = BitConverter.ToUInt64(bytes, 8);  // bytes[8..15]
+            guid = value;
+            guidCached = true;
+            cached = null;
         }
 
-        public readonly int CompareTo(object value)
+        public UUID(string value)
         {
-            return value switch
-            {
-                Guid g => g.CompareTo(Numeric),
-                UUID guid => Numeric.CompareTo(guid.Numeric),
-                _ => throw new ArgumentException("Must be Guid"),
-            };
+            if (!Guid.TryParse(value, out var g)) g = Guid.Empty;
+            var bytes = g.ToByteArray();
+            lo = BitConverter.ToUInt64(bytes, 0);
+            hi = BitConverter.ToUInt64(bytes, 8);
+            guid = g;
+            guidCached = true;
+            cached = NormalizeString(value, g);
         }
 
-        public readonly int CompareTo(UUID other) => Numeric.CompareTo(other.Numeric);
-        public readonly int CompareTo(Guid other) => Numeric.CompareTo(other);
-        public readonly bool Equals(UUID other) => Numeric == other.Numeric;
-        public readonly bool Equals(Guid other) => Numeric == other;
-        public readonly override bool Equals(object obj) => (obj is UUID other && Equals(other)) || (obj is Guid guid && Equals(guid));
-        public readonly override int GetHashCode() => Numeric.GetHashCode();
-        public override string ToString() => Value;
+        // ---- Public surface ----
+
+        /// <summary> The canonical string (cached). </summary>
+        public string Value => cached ??= Numeric.ToString();
+
+        /// <summary> The Guid view (cached). </summary>
+        public Guid Numeric
+        {
+            get
+            {
+                if (guidCached) return guid;
+                Span<byte> b = stackalloc byte[16];
+                BitConverter.GetBytes(lo).CopyTo(b);      // [0..7]
+                BitConverter.GetBytes(hi).CopyTo(b[8..]); // [8..15]
+                guid = new Guid(b);
+                guidCached = true;
+                return guid;
+            }
+        }
+
+
+        // ---- Comparers / Equality ----
+        public int CompareTo(UUID other) => Numeric.CompareTo(other.Numeric);
+        public int CompareTo(Guid other) => Numeric.CompareTo(other);
+        public int CompareTo(object? obj) => obj switch
+        {
+            UUID u => CompareTo(u),
+            Guid g => CompareTo(g),
+            _ => throw new ArgumentException("Must be UUID or Guid", nameof(obj))
+        };
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static UUID NewUUID() => Guid.NewGuid();
+        public readonly bool Equals(UUID other) => hi == other.hi && lo == other.lo;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly bool Equals(Guid other)
+        {
+            var u = new UUID(other);
+            return hi == u.hi && lo == u.lo;
+        }
 
+        public readonly override bool Equals(object? obj) =>
+            obj is UUID u && Equals(u) ||
+            obj is Guid g && Equals(g);
 
-        public static bool operator ==(UUID u1, UUID u2) => u1.Equals(u2);
+        public readonly override int GetHashCode()
+        {
+            // Mix 128 bits down; fast and stable
+            unchecked
+            {
+                ulong x = hi * 0x9E3779B97F4A7C15UL ^ lo;
+                x ^= x >> 33;
+                x *= 0xff51afd7ed558ccdUL;
+                x ^= x >> 33;
+                return (int)(x ^ (x >> 32));
+            }
+        }
 
-        public static bool operator !=(UUID u1, UUID u2) => !(u1 == u2);
+        public override string ToString() => Value;
 
-        public static implicit operator UUID(Guid guid) => new UUID(guid);
+        // ---- Operators ----
+        public static bool operator ==(UUID a, UUID b) => a.Equals(b);
+        public static bool operator !=(UUID a, UUID b) => !a.Equals(b);
 
-        public static implicit operator Guid(UUID uuid) => string.IsNullOrEmpty(uuid.Value) || uuid.Value == null ? Guid.Empty : new Guid(uuid.Value);
-
+        public static implicit operator UUID(Guid g) => new UUID(g);
+        public static implicit operator Guid(UUID u) => u.Numeric;
         public static implicit operator string(UUID u) => u.Value;
 
-        public static implicit operator BigInteger(UUID u) => ParseToNumeric(u.value);
+        // ---- Utilities ----
+        public readonly (ulong hi, ulong lo) ToTuple() => new(hi, lo);
 
-        public static BigInteger ParseToNumeric(UUID u) => ParseToNumeric(u.value);
-
-        public static BigInteger ParseToNumeric(string? str)
+        public static bool TryParse(string? s, out UUID uuid)
         {
-            if (string.IsNullOrEmpty(str)) return 0;
-
-            BigInteger value = 0;
-            for (int i = 0; i < str.Length; i++)
+            if (Guid.TryParse(s, out var g))
             {
-                char current = str[i];
-                switch (current)
-                {
-                    case >= '0' and <= '9':
-                        value <<= 4;
-                        value += current - '0';
-                        break;
-                    case >= 'a' and <= 'f':
-                        value <<= 4;
-                        value += current - 'a' + 10;
-                        break;
-                    default:
-                        break;
-                }
+                uuid = new UUID(g);
+                uuid.cached = g.ToString();
+                return true;
             }
-            return value;
+            uuid = Empty;
+            return false;
         }
 
-        private string ValidateValue()
+        // ---- Serialization hooks ----
+        // Nothing to do before serialize; primitives are the source of truth.
+        void ISerializationCallbackReceiver.OnBeforeSerialize() { }
+
+        void ISerializationCallbackReceiver.OnAfterDeserialize()
         {
-            if (guid != Guid.Empty)
-            {
-                return guid.ToString();
-            }
-            else return Empty.Value;
+            guid = default;
+            guidCached = false;
+            cached = null;
         }
 
-        readonly void ISerializationCallbackReceiver.OnBeforeSerialize() { }
+        // ---- Private helpers ----
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteParts(Span<byte> dest16, ulong lo, ulong hi)
+        {
+            // dest16 length must be 16
+            var loBytes = BitConverter.GetBytes(lo);
+            var hiBytes = BitConverter.GetBytes(hi);
+            loBytes.CopyTo(dest16);            // [0..7]
+            hiBytes.CopyTo(dest16.Slice(8));   // [8..15]
+        }
 
-        void ISerializationCallbackReceiver.OnAfterDeserialize() => Guid.TryParse(value, out guid);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string NormalizeString(string original, Guid parsed)
+        {
+            // If original was a valid Guid canonical form, keep it; otherwise use canonical ToString
+            return Guid.TryParse(original, out var g) && g == parsed ? original : parsed.ToString();
+        }
     }
 }
