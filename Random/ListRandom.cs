@@ -7,28 +7,12 @@ namespace Minerva.Module
 {
     public static class ListRandom
     {
-        public delegate int RandomIndexer(int count);
-
         /// <summary>
         /// Random Reorder the list by weight
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="weightables"></param>
-        public static void RandomReorder<T>(this IList<T> list) => RandomReorder(list, (n) => UnityEngine.Random.Range(0, n));
-
-        /// <summary>
-        /// Random Reorder the list by weight
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="weightables"></param>
-        public static void RandomReorder<T>(this IList<T> list, Random random) => RandomReorder(list, (n) => random.Next(n));
-
-        /// <summary>
-        /// Random Reorder the list by weight
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="weightables"></param>
-        public static void RandomReorder<T>(this IList<T> list, RandomIndexer indexer)
+        public static void RandomReorder<T>(this IList<T> list, IndexGenerator indexer = default)
         {
             if (list == null) throw new ArgumentNullException();
             int count = list.Count;
@@ -36,8 +20,8 @@ namespace Minerva.Module
             //var randomResult = new List<T>();
             for (int i = 0; i < list.Count * 2; i++)
             {
-                int index = indexer(list.Count);
-                int index2 = indexer(list.Count);
+                int index = indexer.Get(list.Count);
+                int index2 = indexer.Get(list.Count);
                 (list[index2], list[index]) = (list[index], list[index2]);
             }
         }
@@ -50,34 +34,14 @@ namespace Minerva.Module
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomPop<T>(this IList<T> list) => RandomPop(list, n => UnityEngine.Random.Range(0, n));
-
-        /// <summary> 
-        /// Pop a random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomPop<T>(this IList<T> list, Random random) => RandomPop(list, (n) => random.Next(n));
-
-        /// <summary> 
-        /// Pop a random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomPop<T>(this IList<T> list, RandomIndexer indexer)
+        public static T RandomPop<T>(this IList<T> list, IndexGenerator indexer = default)
         {
             if (list == null) throw new ArgumentNullException();
             int count = list.Count;
             if (count == 0) throw new InvalidOperationException();
 
 
-            int index = indexer(count);
+            int index = indexer.Get(count);
             var value = list[index];
             list.RemoveAt(index);
             return value;
@@ -91,27 +55,7 @@ namespace Minerva.Module
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomGet<T>(this IList<T> list) => RandomGet(list, n => UnityEngine.Random.Range(0, n));
-
-        /// <summary>
-        /// Get a Random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomGet<T>(this IList<T> list, Random random) => RandomGet(list, n => random.Next(n));
-
-        /// <summary>
-        /// Get a Random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomGet<T>(this IList<T> list, RandomIndexer indexer)
+        public static T RandomGet<T>(this IList<T> list, IndexGenerator indexer)
         {
             if (list == null) throw new ArgumentNullException();
 
@@ -120,7 +64,7 @@ namespace Minerva.Module
             if (count == 0) throw new InvalidOperationException();
 
 
-            int index = indexer(count);
+            int index = indexer.Get(count);
             return list[index];
         }
 
@@ -132,27 +76,7 @@ namespace Minerva.Module
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomGet<T>(this IEnumerable<T> list) => RandomGet(list, n => UnityEngine.Random.Range(0, n));
-
-        /// <summary>
-        /// Get a Random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomGet<T>(this IEnumerable<T> list, Random random) => RandomGet(list, n => random.Next(n));
-
-        /// <summary>
-        /// Get a Random element from the list
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static T RandomGet<T>(this IEnumerable<T> list, RandomIndexer indexer)
+        public static T RandomGet<T>(this IEnumerable<T> list, IndexGenerator indexer = default)
         {
             if (list == null) throw new ArgumentNullException();
 
@@ -160,7 +84,7 @@ namespace Minerva.Module
             if (count == 0) throw new InvalidOperationException();
 
 
-            int index = indexer(count);
+            int index = indexer.Get(count);
             foreach (var item in list)
             {
                 if (index-- <= 0)

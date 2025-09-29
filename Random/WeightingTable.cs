@@ -36,12 +36,12 @@ namespace Minerva.Module.WeightedRandom
 
         public IWeightable<T> WeightNode()
         {
-            return nodes.WeightNode(sum, n => random.Next(n));
+            return nodes.WeightNode(sum, random);
         }
 
         public T Weight()
         {
-            return nodes.WeightNode(sum, n => random.Next(n)).Item;
+            return nodes.WeightNode(sum, random).Item;
         }
 
         public IWeightable<T> PopWeightNode()

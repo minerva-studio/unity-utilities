@@ -26,7 +26,7 @@ namespace Minerva.Module
 
         public static T From<T>(this Random random, params (T, int weight)[] values)
         {
-            return WeightedRandom.Weightable.Weight(values, e => e.Item1, e => e.weight, n => random.Next(n));
+            return WeightedRandom.Weightable.Weight(values, e => e.Item1, e => e.weight, random);
         }
     }
 }

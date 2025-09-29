@@ -43,3 +43,4 @@ namespace Minerva.Module
         public readonly override string ToString() => !HasValue ? "null" : Value.ToString();
     }
 }
+
