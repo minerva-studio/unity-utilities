@@ -41,14 +41,22 @@ namespace Minerva.Module.Editor
                     Rect separatorRect = new Rect(valueRect.x + halfWidth, valueRect.y, 15f, valueRect.height);
                     Rect maxRect = new Rect(valueRect.x + halfWidth + 15f, valueRect.y, halfWidth, valueRect.height);
 
-                    minProp.floatValue = EditorGUI.FloatField(minRect, minProp.floatValue);
+                    float min = minProp.floatValue;
+                    float newMin = EditorGUI.FloatField(minRect, min);
+                    if (newMin != min) minProp.floatValue = newMin;
+
                     EditorGUI.LabelField(separatorRect, "-", EditorStyles.centeredGreyMiniLabel);
-                    maxProp.floatValue = EditorGUI.FloatField(maxRect, maxProp.floatValue);
+
+                    float max = maxProp.floatValue;
+                    float newMax = EditorGUI.FloatField(maxRect, max);
+                    if (newMax != max) maxProp.floatValue = newMax;
                 }
             }
             else if (valueProp != null)
             {
-                valueProp.floatValue = EditorGUI.FloatField(valueRect, valueProp.floatValue);
+                float value = valueProp.floatValue;
+                float newValue = EditorGUI.FloatField(valueRect, value);
+                if (newValue != value) valueProp.floatValue = newValue;
             }
 
             if (randomizeProp != null)
