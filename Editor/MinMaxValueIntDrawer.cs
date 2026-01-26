@@ -8,7 +8,8 @@ namespace Minerva.Module.Editor
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing) * 2;
+            // Return the height of a single line
+            return EditorGUIUtility.singleLineHeight;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -26,8 +27,20 @@ namespace Minerva.Module.Editor
             const float toggleWidth = 15f;
             const float padding = 2f;
 
-            Rect valueRect = new Rect(position.x + padding, position.y, position.width - toggleWidth, position.height - padding * 2);
-            Rect toggleRect = new Rect(valueRect.x + valueRect.width - padding, position.y, toggleWidth, valueRect.height);
+            Rect valueRect;
+
+            // Draw the label and get the content rect for values
+            if (label != GUIContent.none)
+            {
+                var contentRect = EditorGUI.PrefixLabel(position, label);
+                valueRect = new Rect(contentRect.x, contentRect.y, contentRect.width - toggleWidth - padding, contentRect.height);
+            }
+            else
+            {
+                valueRect = new Rect(position.x, position.y, position.width - toggleWidth - padding, position.height);
+            }
+
+            Rect toggleRect = new Rect(valueRect.xMax + padding, position.y, toggleWidth, position.height);
 
             if (randomizeProp != null && randomizeProp.boolValue && rangeProp != null)
             {
@@ -36,15 +49,15 @@ namespace Minerva.Module.Editor
 
                 if (minProp != null && maxProp != null)
                 {
-                    float halfWidth = (valueRect.width - 15f) * 0.5f;
+                    float halfWidth = (valueRect.width - padding) * 0.5f;
                     Rect minRect = new Rect(valueRect.x, valueRect.y, halfWidth, valueRect.height);
-                    Rect separatorRect = new Rect(valueRect.x + halfWidth, valueRect.y, 15f, valueRect.height);
-                    Rect maxRect = new Rect(valueRect.x + halfWidth + 15f, valueRect.y, halfWidth, valueRect.height);
+                    Rect maxRect = new Rect(valueRect.x + halfWidth + padding, valueRect.y, halfWidth, valueRect.height);
 
                     var min = minProp.intValue;
                     var newMin = EditorGUI.IntField(minRect, min);
                     if (newMin != min) minProp.intValue = newMin;
 
+                    Rect separatorRect = new Rect(valueRect.x + halfWidth, valueRect.y, 15f, valueRect.height);
                     EditorGUI.LabelField(separatorRect, "-", EditorStyles.centeredGreyMiniLabel);
 
                     var max = maxProp.intValue;
@@ -67,8 +80,6 @@ namespace Minerva.Module.Editor
 
         private static void DrawModeDropdown(Rect dropdownRect, SerializedObject serializedObject, SerializedProperty randomizeProp, bool isRandomized)
         {
-            // Overlay a clickable hotspot on top of the value field without drawing a background button.
-            // Draw a small arrow to hint interactivity.
             if (Event.current.type == EventType.Repaint)
             {
                 EditorStyles.label.Draw(dropdownRect, GUIContent.none, false, false, false, false);
