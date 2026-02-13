@@ -42,6 +42,7 @@ namespace Minerva.Module.Geomtry
         public static implicit operator Polygon(Vector2[] vertices)
         {
             var poly = new Polygon();
+            poly.vertices = new Vector3[vertices.Length];
             int i = 0;
             Array.ForEach(vertices, (v) => poly[i++] = v);
             return poly;
@@ -57,9 +58,14 @@ namespace Minerva.Module.Geomtry
             return vertices.GetEnumerator();
         }
 
-        public object Clone()
+        public Polygon Clone()
         {
-            return vertices.Clone();
+            return new Polygon() { vertices = (Vector3[])vertices.Clone() };
+        }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
         }
     }
 
@@ -69,26 +75,6 @@ namespace Minerva.Module.Geomtry
     public static class Geometry
     {
         public const int CIRCLE_DEGREE = 360;
-
-        /// <summary>
-        /// is a point inside a polygon?
-        /// </summary>
-        /// <param name="vertex"></param>
-        /// <param name="point"></param>
-        /// <returns></returns>
-        //public static bool IsPointInPolygon(Vector2[] vertex, Vector2 point)
-        //{
-        //    int i;
-        //    int j;
-        //    bool c = false;
-        //    for (i = 0, j = vertex.Length - 1; i < vertex.Length; j = i++)
-        //    {
-        //        if (vertex[i].y > point.y != vertex[j].y > point.y &&
-        //         point.x < (vertex[j].x - vertex[i].x) * (point.y - vertex[i].y) / (vertex[j].y - vertex[i].y) + vertex[i].x)
-        //            c = !c;
-        //    }
-        //    return c;
-        //}
 
         /// <summary>
         /// is a point inside a polygon?
@@ -264,25 +250,6 @@ namespace Minerva.Module.Geomtry
                     }
             }
             return points;
-        }
-
-        [Obsolete("use IsPointInPolygon instead")]
-        public static bool IsPointInTriangle(List<Vector2> triangle, Vector2 point)
-        {
-            return IsPointInTriangle(triangle[0], triangle[1], triangle[2], point);
-        }
-
-        [Obsolete("use IsPointInPolygon instead")]
-        public static bool IsPointInTriangle(Vector2 A, Vector2 B, Vector2 C, Vector2 point)
-        {
-            Vector2 c = A - B;
-            Vector2 a = C - B;
-            Vector2 x = A - point;
-            float angleAlpha = Vector2.Angle(x, c);
-            float angleB = Vector2.Angle(a, c);
-            float angleBeta = 180 - angleAlpha - angleB;
-            var dist = c.magnitude / Mathf.Sin(angleBeta) * Mathf.Sin(angleB);
-            return x.magnitude < dist;
         }
     }
 }
