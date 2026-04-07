@@ -79,47 +79,51 @@ namespace Minerva.Module
             Canvas canvas = rectTransform.GetComponentInParent<Canvas>();
             if (canvas == null) return;
 
-            Canvas rootCanvas = canvas.rootCanvas; // 获取最顶层 Canvas
+            Canvas rootCanvas = canvas.rootCanvas; // Get the top-level canvas
             RectTransform canvasRect = rootCanvas.transform as RectTransform;
 
             if (rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
             {
                 ForceRebuildLayoutImmediateRecursive(rectTransform);
-                // **1️⃣ 先把 rectTransform 的局部坐标转换到 rootCanvas 坐标**
-                Vector3 worldPos = rectTransform.position; // 获取 UI 在世界坐标的位置
-                Vector3 localPos = canvasRect.InverseTransformPoint(worldPos); // 转换到 rootCanvas 的本地坐标
+                // 1) Convert rectTransform position to rootCanvas local space.
+                Vector3 worldPos = rectTransform.position; // UI world position
+                Vector3 localPos = canvasRect.InverseTransformPoint(worldPos); // rootCanvas local position
 
-                // **2️⃣ 计算 UI 的边界（转换到 rootCanvas 坐标）**
+                // 2) Compute UI bounds in rootCanvas local space.
                 Vector2 size = rectTransform.sizeDelta;
                 Vector2 pivotOffset = rectTransform.pivot * size;
 
                 Vector2 uiMin = (Vector2)localPos - pivotOffset;
                 Vector2 uiMax = uiMin + size;
 
-                // **3️⃣ 计算屏幕范围（rootCanvas 坐标）**
+                // 3) Compute visible bounds in rootCanvas local space.
                 float screenMinX = canvasRect.rect.xMin;
                 float screenMaxX = canvasRect.rect.xMax;
                 float screenMinY = canvasRect.rect.yMin;
                 float screenMaxY = canvasRect.rect.yMax;
 
-                // **4️⃣ 计算需要调整的位置**
+                // 4) Compute required position adjustment.
                 Vector2 adjustment = Vector2.zero;
-                if (uiMin.x < screenMinX) adjustment.x = screenMinX - uiMin.x; // 左侧超出
-                if (uiMax.x > screenMaxX) adjustment.x = screenMaxX - uiMax.x; // 右侧超出
-                if (uiMin.y < screenMinY) adjustment.y = screenMinY - uiMin.y; // 底部超出
-                if (uiMax.y > screenMaxY) adjustment.y = screenMaxY - uiMax.y; // 顶部超出
+                if (uiMin.x < screenMinX) adjustment.x = screenMinX - uiMin.x; // Exceeded left bound
+                if (uiMax.x > screenMaxX) adjustment.x = screenMaxX - uiMax.x; // Exceeded right bound
+                if (uiMin.y < screenMinY) adjustment.y = screenMinY - uiMin.y; // Exceeded bottom bound
+                if (uiMax.y > screenMaxY) adjustment.y = screenMaxY - uiMax.y; // Exceeded top bound
 
-                // **5️⃣ 计算新的位置**
+                // 5) Apply adjustment.
                 Vector3 newLocalPos = localPos + (Vector3)adjustment;
 
-                // **6️⃣ 把调整后的坐标转换回 rectTransform 的局部坐标**
+                // 6) Convert back to world position and assign.
                 rectTransform.position = canvasRect.TransformPoint(newLocalPos);
             }
             else if (rootCanvas.renderMode == RenderMode.ScreenSpaceCamera)
             {
                 ForceRebuildLayoutImmediateRecursive(rectTransform);
                 var parent = rectTransform.parent;
-                var localCamPos = LocalToCameraPosition(parent, rectTransform.localPosition);
+                var uiCamera = rootCanvas.worldCamera;
+                if (uiCamera == null) uiCamera = Camera.main;
+                if (uiCamera == null) return;
+
+                var localCamPos = LocalToCameraPosition(parent, rectTransform.localPosition, uiCamera);
 
                 if (!rectTransform.IsUIInScreen(out Vector2 llCamPos, out Vector2 urCamPos))
                 {
@@ -128,33 +132,33 @@ namespace Minerva.Module
                     if (llCamPos.y < 0) localCamPos.y += -llCamPos.y;
                     if (urCamPos.y > Screen.height) localCamPos.y += Screen.height - urCamPos.y;
 
-                    rectTransform.localPosition = CameraToLocalPosition(parent, localCamPos);
+                    rectTransform.localPosition = CameraToLocalPosition(parent, localCamPos, uiCamera);
                 }
             }
             else
             {
                 var parent = rectTransform.parent;
-                // local position in camera
+                // Local position in screen space
                 var localCamPos = LocalToCameraPosition(parent, rectTransform.localPosition);
                 if (!rectTransform.IsUIInScreen(out Vector2 llCamPos, out Vector2 urCamPos))
                 {
                     //Debug.LogWarning($"{rectTransform} is out of screen!", rectTransform);
-                    if (llCamPos.x < 0)//需要右移进入屏幕范围
+                    if (llCamPos.x < 0) // Move right into screen bounds
                     {
                         localCamPos.x += -llCamPos.x;
                         rectTransform.localPosition = CameraToLocalPosition(parent, localCamPos);
                     }
-                    if (urCamPos.x > Screen.width)//需要左移进入屏幕范围
+                    if (urCamPos.x > Screen.width) // Move left into screen bounds
                     {
                         localCamPos.x += Screen.width - urCamPos.x;
                         rectTransform.localPosition = CameraToLocalPosition(parent, localCamPos);
                     }
-                    if (llCamPos.y < 0)//需要上移进入屏幕范围
+                    if (llCamPos.y < 0) // Move up into screen bounds
                     {
                         localCamPos.y += -llCamPos.y;
                         rectTransform.localPosition = CameraToLocalPosition(parent, localCamPos);
                     }
-                    if (urCamPos.y > Screen.height)//需要下移进入屏幕范围
+                    if (urCamPos.y > Screen.height) // Move down into screen bounds
                     {
                         localCamPos.y += Screen.height - urCamPos.y;
                         rectTransform.localPosition = CameraToLocalPosition(parent, localCamPos);
@@ -237,45 +241,63 @@ namespace Minerva.Module
         /// <returns></returns>
         public static Vector2 CameraToLocalPosition(Transform parent, Vector2 camPos)
         {
-            var worldPos = Camera.main.ScreenToWorldPoint(camPos);
+            var mainCamera = Camera.main;
+            if (mainCamera == null) return Vector2.zero;
+
+            var worldPos = mainCamera.ScreenToWorldPoint(camPos);
             var localPos = parent.InverseTransformPoint(worldPos);
             //Debug.Log(worldPos);
             //Debug.Log(localPos);
             return localPos;
         }
 
-        public static Vector3 GetMouseWorldPosition(RectTransform uiElement) => uiElement ? Vector3.zero : GetMouseWorldPosition(uiElement.GetComponentInParent<Canvas>());
+        /// <summary>
+        /// Convert a camera's position to a local position.
+        /// </summary>
+        /// <param name="parent">The transform that local position is relative to.</param>
+        /// <param name="camPos">Position in camera (screen) space.</param>
+        /// <param name="camera">Camera used for the conversion.</param>
+        /// <returns>Position in local space.</returns>
+        public static Vector2 CameraToLocalPosition(Transform parent, Vector2 camPos, Camera camera)
+        {
+            var worldPos = camera.ScreenToWorldPoint(camPos);
+            var localPos = parent.InverseTransformPoint(worldPos);
+            return localPos;
+        }
+
+        public static Vector3 GetMouseWorldPosition(RectTransform uiElement) => uiElement ? GetMouseWorldPosition(uiElement.GetComponentInParent<Canvas>()) : Vector3.zero;
         public static Vector3 GetMouseWorldPosition(Canvas canvas)
         {
-            Vector2 mouseScreenPosition = Input.mousePosition; // 获取鼠标屏幕坐标
+            Vector2 mouseScreenPosition = Input.mousePosition; // Mouse screen position
             RectTransform canvasRect = canvas.transform as RectTransform;
 
             if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
             {
-                // 🔹 Screen Space - Overlay (直接转换)
+                // Screen Space - Overlay (direct conversion)
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, mouseScreenPosition, null, out Vector2 localPoint);
                 return canvas.transform.TransformPoint(localPoint);
             }
             else
             {
-                // 🔹 Screen Space - Camera 或 World Space (需要相机转换)
-                Camera cam = canvas.worldCamera ?? Camera.main; // 获取 Canvas 关联的相机
+                // Screen Space - Camera / World Space (camera conversion required)
+                Camera cam = canvas.worldCamera;    // Canvas camera 
+                if (cam == null) cam = Camera.main;
                 if (cam == null)
                 {
-                    Debug.LogError("Canvas 没有绑定 Camera，并且没有可用的 Camera.main");
+                    Debug.LogError("Canvas has no assigned camera and no available Camera.main.");
                     return Vector3.zero;
                 }
 
-                // 将鼠标屏幕坐标转换为世界坐标
+                // Convert mouse screen position to world position
                 Ray ray = cam.ScreenPointToRay(mouseScreenPosition);
                 Plane plane = new Plane(canvas.transform.forward, canvas.transform.position);
                 if (plane.Raycast(ray, out float distance))
                 {
-                    return ray.GetPoint(distance); // 获取射线与 Canvas 平面的交点
+                    return ray.GetPoint(distance); // Ray-plane intersection point
                 }
             }
 
-            return Vector3.zero; // 如果无法计算，返回 (0,0,0)
+            return Vector3.zero; // Return (0,0,0) if conversion fails
         }
     }
 }
