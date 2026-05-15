@@ -184,17 +184,7 @@ namespace Minerva.Module
         /// <returns></returns>
         public static (Vector2, Vector2) GetRectRespectToCamera(this RectTransform rectTransform)
         {
-            var parent = rectTransform.parent;
-
-            var lowerLeft = (Vector2)rectTransform.localPosition - rectTransform.pivot * rectTransform.sizeDelta;
-            var upperRight = lowerLeft + rectTransform.sizeDelta;
-
-            // lower left
-            var llCamPos = parent ? LocalToCameraPosition(parent, lowerLeft) : lowerLeft;
-            // upper right
-            var urCamPos = parent ? LocalToCameraPosition(parent, upperRight) : upperRight;
-
-            return (llCamPos, urCamPos);
+            return GetRectRespectToCamera(rectTransform, Camera.main);
         }
 
         /// <summary>
@@ -204,17 +194,19 @@ namespace Minerva.Module
         /// <returns></returns>
         public static (Vector2, Vector2) GetRectRespectToCamera(this RectTransform rectTransform, Camera camera)
         {
-            var parent = rectTransform.parent;
+            Vector3[] corners = new Vector3[4];
+            rectTransform.GetWorldCorners(corners);
 
-            var lowerLeft = (Vector2)rectTransform.localPosition - rectTransform.pivot * rectTransform.sizeDelta;
-            var upperRight = lowerLeft + rectTransform.sizeDelta;
+            Vector2 min = Vector2.positiveInfinity;
+            Vector2 max = Vector2.negativeInfinity;
+            for (int i = 0; i < corners.Length; i++)
+            {
+                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(camera, corners[i]);
+                min = Vector2.Min(min, screenPoint);
+                max = Vector2.Max(max, screenPoint);
+            }
 
-            // lower left
-            var llCamPos = parent ? LocalToCameraPosition(parent, lowerLeft, camera) : lowerLeft;
-            // upper right
-            var urCamPos = parent ? LocalToCameraPosition(parent, upperRight, camera) : upperRight;
-
-            return (llCamPos, urCamPos);
+            return (min, max);
         }
 
         /// <summary>
@@ -244,11 +236,7 @@ namespace Minerva.Module
             var mainCamera = Camera.main;
             if (mainCamera == null) return Vector2.zero;
 
-            var worldPos = mainCamera.ScreenToWorldPoint(camPos);
-            var localPos = parent.InverseTransformPoint(worldPos);
-            //Debug.Log(worldPos);
-            //Debug.Log(localPos);
-            return localPos;
+            return CameraToLocalPosition(parent, camPos, mainCamera);
         }
 
         /// <summary>
@@ -260,9 +248,20 @@ namespace Minerva.Module
         /// <returns>Position in local space.</returns>
         public static Vector2 CameraToLocalPosition(Transform parent, Vector2 camPos, Camera camera)
         {
-            var worldPos = camera.ScreenToWorldPoint(camPos);
-            var localPos = parent.InverseTransformPoint(worldPos);
-            return localPos;
+            if (!parent || !camera) return Vector2.zero;
+
+            if (parent is RectTransform parentRect &&
+                RectTransformUtility.ScreenPointToWorldPointInRectangle(parentRect, camPos, camera, out Vector3 uiWorldPos))
+            {
+                return parent.InverseTransformPoint(uiWorldPos);
+            }
+
+            Ray ray = camera.ScreenPointToRay(camPos);
+            Plane plane = new Plane(parent.forward, parent.position);
+            if (!plane.Raycast(ray, out float distance)) return Vector2.zero;
+
+            Vector3 worldPos = ray.GetPoint(distance);
+            return parent.InverseTransformPoint(worldPos);
         }
 
         public static Vector3 GetMouseWorldPosition(RectTransform uiElement) => uiElement ? GetMouseWorldPosition(uiElement.GetComponentInParent<Canvas>()) : Vector3.zero;
