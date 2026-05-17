@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 using UnityEngine.UI;
-using Input = UnityEngine.Input;
 
 namespace Minerva.Module.UI
 {
@@ -62,13 +64,41 @@ namespace Minerva.Module.UI
                 //remove the rePlayer getaxis calls is you aren't using Rewired
                 //if it still doesn't work, check your input manager settings's axes and make sure they are defined properly
                 //if you're using the new input system, this is also probably where you should replace the calls to the old one
-                if (Input.GetAxis("Vertical") != 0.0f || Input.GetAxis("Horizontal") != 0.0f || Input.GetButtonDown("Horizontal")
-                    || Input.GetButtonDown("Vertical") || Input.GetButton("Horizontal") || Input.GetButton("Vertical"))
+                if (HasNavigationInput())
                 {
                     ScrollToSelected(false);
                 }
             }
         }
+
+        private static bool HasNavigationInput()
+        {
+#if ENABLE_INPUT_SYSTEM
+            Vector2 navigation = Vector2.zero;
+
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.leftArrowKey.isPressed || Keyboard.current.aKey.isPressed) navigation.x -= 1f;
+                if (Keyboard.current.rightArrowKey.isPressed || Keyboard.current.dKey.isPressed) navigation.x += 1f;
+                if (Keyboard.current.downArrowKey.isPressed || Keyboard.current.sKey.isPressed) navigation.y -= 1f;
+                if (Keyboard.current.upArrowKey.isPressed || Keyboard.current.wKey.isPressed) navigation.y += 1f;
+            }
+
+            if (Gamepad.current != null)
+            {
+                navigation += Gamepad.current.leftStick.ReadValue();
+                navigation += Gamepad.current.dpad.ReadValue();
+            }
+
+            return navigation.sqrMagnitude > 0.01f;
+#elif ENABLE_LEGACY_INPUT_MANAGER
+            return Input.GetAxis("Vertical") != 0.0f || Input.GetAxis("Horizontal") != 0.0f || Input.GetButtonDown("Horizontal")
+                || Input.GetButtonDown("Vertical") || Input.GetButton("Horizontal") || Input.GetButton("Vertical");
+#else
+            return false;
+#endif
+        }
+
         void ScrollToSelected(bool quickScroll)
         {
             int selectedIndex = -1;
