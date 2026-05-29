@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Minerva.Module
@@ -267,7 +268,11 @@ namespace Minerva.Module
         public static Vector3 GetMouseWorldPosition(RectTransform uiElement) => uiElement ? GetMouseWorldPosition(uiElement.GetComponentInParent<Canvas>()) : Vector3.zero;
         public static Vector3 GetMouseWorldPosition(Canvas canvas)
         {
-            Vector2 mouseScreenPosition = Input.mousePosition; // Mouse screen position
+#if ENABLE_INPUT_SYSTEM
+            Vector2 mouseScreenPosition = Mouse.current?.position.ReadValue() ?? Vector2.zero;
+#else
+            Vector2 mouseScreenPosition = Input.mousePosition;
+#endif
             RectTransform canvasRect = canvas.transform as RectTransform;
 
             if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
