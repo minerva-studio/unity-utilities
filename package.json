@@ -1,20 +1,19 @@
 {
-    "name": "com.minervastudio.utilities",
-    "version": "1.2410.2",
-    "displayName": "C# code utilities",
-    "description": "Extra utilities for Unity",
-    "unity": "2021.3",
-    "dependencies": {},
-    "keywords": [
-        "external",
-        "utilities",
-        "C#",
-        "minerva studio",
-        "minerva game studio"
-    ],
-    "author": {
-        "name": "Minerva Game Studio",
-        "email": "library.of.meialia@gmail.com",
-        "url": "https://github.com/minerva-studio/unity-utilities"
-    }
+  "name": "com.minervagamestudio.utilities",
+  "version": "1.2607.0",
+  "displayName": "C# Code Utilities",
+  "description": "Extra utilities for Unity.",
+  "unity": "2021.3",
+  "keywords": [
+    "external",
+    "utilities",
+    "C#",
+    "minerva studio",
+    "minerva game studio"
+  ],
+  "author": {
+    "name": "Minerva Game Studio",
+    "url": "https://github.com/minerva-studio/unity-utilities",
+    "email": "library.of.meialia@gmail.com"
+  }
 }
